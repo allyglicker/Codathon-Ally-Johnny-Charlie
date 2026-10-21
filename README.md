@@ -29,7 +29,31 @@ python demo/demo_runner.py dog-walking
 # 3. The scripted demo screen
 open app/launch-desk.html                 # or double-click it
 open app/characters/crew-preview.html     # the characters, animated
+
+# 4. The backend API (standard library only)
+python api/server.py                      # serves on http://localhost:8000
+curl -X POST http://localhost:8000/plan \
+  -H 'Content-Type: application/json' \
+  -d '{"idea":"Homemade cookies","location":"Milledgeville, GA","startup_budget":1500}'
 ```
+
+## The API
+
+`api/server.py` is a small HTTP backend (Python standard library, no extra
+dependencies). Every agent call goes through `run_pipeline()` in
+`demo/demo_runner.py`; the UI never calls agents directly.
+
+- `POST /plan` takes a founder profile (bare fields, or wrapped in
+  `founder_profile`, plus optional `mode` and `scenario_name`), runs the agent
+  team, and returns the pipeline result: `mode`, `scenario`, `outputs`,
+  `events`, `warnings`, and `used_saved_answers`.
+- `POST /plan?demo=1` forces demo mode, the on-stage safety switch.
+- `GET /health` reports the current mode and whether live agents (Bedrock) are wired in.
+
+Live agents call a Claude model on **Amazon Bedrock** (`api/agents.py`), using an
+IAM role and the `AWS_REGION` / `BEDROCK_MODEL_ID` settings, no API keys. When
+Bedrock isn't configured, the pipeline runs on the saved answers in
+`demo/scenarios/`, so the server works on any machine without AWS set up.
 
 ## Modes
 
@@ -51,6 +75,9 @@ neur/
 │   ├── legal/prompt.md           Quill
 │   └── finance/                  Penny: prompt.md, finance_calc.py
 ├── demo/                         demo_runner.py + saved scenarios (cookies, dog-walking)
+├── api/
+│   ├── server.py                 POST /plan, GET /health (standard library)
+│   └── agents.py                 live agents on Amazon Bedrock (Claude)
 └── app/
     ├── launch-desk.html          The scripted demo screen, with all four characters
     └── characters/               ward.js, quill.js, market.js, finance.js, crew-preview.html
