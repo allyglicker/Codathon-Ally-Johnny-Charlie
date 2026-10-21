@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neur — your team is on it</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <p class="eyebrow" id="eyebrow">Neur · launch planner</p>
+      <h1>Your team is on it</h1>
+      <p class="sub">Ward sends your idea to three specialists, checks their answers against each other, and hands back one launch roadmap.</p>
+    </div>
+    <div style="display:grid; gap:8px; justify-items:end">
+      <div class="controls">
+        <button id="play" class="primary">Pause</button>
+        <button id="step">Step</button>
+        <button id="reset">Restart</button>
+        <label for="speed" style="position:absolute;left:-9999px">Speed</label>
+        <select id="speed">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="1.5">1.5×</option>
+          <option value="2">2×</option>
+        </select>
+      </div>
+      <div class="progress" style="width:100%"><i id="bar"></i></div>
+    </div>
+  </header>
+
+  <section class="stage" id="stage" aria-label="Neur agents at work">
+    <div class="top">
+      <div class="slot founder" id="n-founder">
+        <p class="card-title">Founder profile</p>
+        <h3 id="f-idea">Your idea</h3>
+        <dl id="f-dl"></dl>
+      </div>
+
+      <div class="slot who" id="n-ward">
+        <canvas id="c-ward" role="img" aria-label="Ward, the manager agent, at his desk"></canvas>
+        <p class="name">Ward</p>
+        <p class="role">Manager</p>
+        <div class="status" id="st-ward">waiting for a founder</div>
+      </div>
+
+      <div class="slot roadmap" id="n-roadmap">
+        <p class="card-title">Launch roadmap</p>
+        <ol id="roadmap">
+          <li data-k="one_sentence"><span><b>Your business in one sentence</b><span class="fill"></span><span class="txt"></span></span></li>
+          <li data-k="sell"><span><b>Will it sell?</b><span class="fill"></span><span class="txt"></span></span></li>
+          <li data-k="money"><span><b>The money</b><span class="fill"></span><span class="txt"></span></span></li>
+          <li data-k="legal"><span><b>Getting legal</b><span class="fill"></span><span class="txt"></span></span></li>
+          <li data-k="watch"><span><b>Watch out for</b><span class="fill"></span><span class="txt"></span></span></li>
+          <li data-k="steps"><span><b>Your first 5 steps</b><span class="fill"></span><span class="txt"></span></span></li>
+          <li data-k="verdict"><span><b>Should you go for it?</b><span class="fill"></span><span class="txt"></span></span></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="crew">
+      <div class="slot who" id="n-market">
+        <canvas id="c-market" role="img" aria-label="Scout, the Customer &amp; Market platypus"></canvas>
+        <p class="name">Scout</p>
+        <p class="role">Customer &amp; Market</p>
+        <div class="status" id="st-market">idle</div>
+      </div>
+      <div class="slot who" id="n-legal">
+        <canvas id="c-quill" role="img" aria-label="Quill, the legal and compliance owl"></canvas>
+        <p class="name">Quill</p>
+        <p class="role">Legal &amp; Compliance</p>
+        <div class="status" id="st-legal">idle</div>
+      </div>
+      <div class="slot who" id="n-finance">
+        <canvas id="c-finance" role="img" aria-label="Penny, the Finance piggy bank"></canvas>
+        <p class="name">Penny</p>
+        <p class="role">Finance</p>
+        <div class="status" id="st-finance">idle</div>
+        <div class="waits"><span id="w-market">Market</span><span id="w-legal">Legal</span></div>
+      </div>
+    </div>
+
+    <div class="desk" id="desk">
+      <div>
+        <h2>Ward's desk: handoffs in</h2>
+        <div class="trays">
+          <div class="tray"><span>Market</span><div class="chips" id="t-market"></div></div>
+          <div class="tray"><span>Legal</span><div class="chips" id="t-legal"></div></div>
+          <div class="tray"><span>Finance</span><div class="chips" id="t-finance"></div></div>
+        </div>
+        <div class="followups" id="fu">Follow-ups used: 0 of 1</div>
+      </div>
+      <div>
+        <h2>Ward's checks</h2>
+        <ul class="checks" id="checks">
+          <li data-k="budget" data-s="pending"><span class="mark"></span><span>Budget</span><span class="d">Startup cost vs. budget</span></li>
+          <li data-k="price" data-s="pending"><span class="mark"></span><span>Price vs. cost</span><span class="d">Price comfortably above cost</span></li>
+          <li data-k="legal" data-s="pending"><span class="mark"></span><span>Legal blockers</span><span class="d">Anything in Legal's risks that stops the plan</span></li>
+          <li data-k="capacity" data-s="pending"><span class="mark"></span><span>Capacity</span><span class="d">Break-even vs. her hours and the market</span></li>
+          <li data-k="runway" data-s="pending"><span class="mark"></span><span>Runway</span><span class="d">Money lasts 6+ months</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="fly" id="fly" aria-hidden="true"></div>
+  </section>
+
+  <section class="caption" aria-live="polite">
+    <div class="cap-who" id="cap-who">Starting</div>
+    <p class="cap-title" id="cap-title">Sending your idea to the team</p>
+    <p class="cap-body" id="cap-body">Ward hands the profile to Scout and Quill.</p>
+    <div id="seeplan-wrap" style="margin-top:12px"></div>
+  </section>
+
+  <p class="foot" id="foot">Each step fires from a real event. Folder tabs read straight from each agent's numbers; dashed tabs are estimates.</p>
+</div>
+
+<script src="characters/ward.js"></script>
+<script src="characters/quill.js"></script>
+<script src="characters/market.js"></script>
+<script src="characters/finance.js"></script>
+<script src="desk.js"></script>
+</body>
+</html>
