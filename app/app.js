@@ -564,6 +564,19 @@
     }
   });
 
+  // Show a "Demo mode" indicator before a run when ?demo=1 is active on stage.
+  function showDemoIndicator() {
+    if (!FORCE_DEMO) return;
+    var tag = $("mode-tag");
+    tag.innerHTML = "";
+    var s = document.createElement("span");
+    s.className = "sample-tag";
+    s.textContent = "Demo mode";
+    s.title = "Forced demo mode (?demo=1): the team runs on saved answers.";
+    tag.appendChild(s);
+  }
+
   // ---------- boot ----------
   renderQuestion();
+  showDemoIndicator();
 })();
