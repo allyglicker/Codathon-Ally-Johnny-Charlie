@@ -421,6 +421,25 @@
       bignum("How long the money lasts", runway == null ? "—" : (runway.toFixed(1) + " mo"), "with no sales at all", true) +
       "</div>";
 
+    // What each agent found: each specialist's own deliverable, attributed.
+    h += '<div class="section-head">What each agent found</div>';
+    h += '<p class="section-sub">Ward combined these three into the plan above. Here is what each specialist delivered.</p>';
+    h += '<div class="agentcards">' +
+      agentCard("market", "c-plan-market", "Scout", "Customer &amp; Market", "The market read", market, [
+        numChip("Price", price != null ? fmtMoney(price) + "/" + shortUnit(unit) : null, isEst(market.numbers, "price_per_unit")),
+        numChip("Customers", fmtInt(val((market.numbers || {}).est_monthly_customers)), isEst(market.numbers, "est_monthly_customers"), "/mo"),
+      ]) +
+      agentCard("legal", "c-plan-legal", "Quill", "Legal &amp; Compliance", "The legal findings", legal, [
+        numChip("Setup", fmtMoneyMaybe(val((legal.numbers || {}).legal_setup_cost)), isEst(legal.numbers, "legal_setup_cost")),
+        numChip("Yearly", fmtMoneyMaybe(val((legal.numbers || {}).annual_license_fees)), isEst(legal.numbers, "annual_license_fees"), "/yr"),
+      ]) +
+      agentCard("finance", "c-plan-finance", "Penny", "Finance", "The numbers", finance, [
+        numChip("To open", startup != null ? money(startup) : null, true),
+        numChip("Break-even", breakEven != null ? breakEven + "/mo" : null, true),
+        numChip("Runway", runway != null ? runway.toFixed(1) + " mo" : null, true),
+      ]) +
+      "</div>";
+
     // price slider (recalculates break-even instantly with the calculator's formula)
     if (price != null && costPerUnit != null && monthlyFixed != null) {
       var pmin = Math.max(0.5, Math.floor((costPerUnit + 0.5)));
@@ -463,6 +482,7 @@
 
     $("screen-plan").innerHTML = h;
     $("restart").addEventListener("click", function () { location.reload(); });
+    drawPlanCharacters();
 
     // wire the price slider
     if (price != null && costPerUnit != null && monthlyFixed != null) {
@@ -533,6 +553,56 @@
   }
 
   // ---------- little helpers ----------
+
+  // One specialist's card for the "What each agent found" section.
+  function agentCard(agent, canvasId, name, role, delivLabel, out, chips) {
+    var summary = out.summary || "";
+    var findings = list(out.key_findings, 3);
+    var validChips = (chips || []).filter(Boolean).join("");
+    return '<div class="agentcard">' +
+      '<div class="head">' +
+        '<canvas id="' + canvasId + '" role="img" aria-label="' + name + '"></canvas>' +
+        '<div><p class="who-name">' + name + '</p><p class="who-role">' + role + "</p></div>" +
+      "</div>" +
+      '<div class="deliv">' + delivLabel + "</div>" +
+      (summary ? '<p class="sum">' + escapeHtml(summary) + "</p>" : "") +
+      (validChips ? '<div class="nums">' + validChips + "</div>" : "") +
+      findings +
+      "</div>";
+  }
+
+  function numChip(label, value, est, suffix) {
+    if (value == null || value === "") return "";
+    return '<span class="numchip' + (est ? " est" : "") + '">' + escapeHtml(label) + " <b>" +
+      escapeHtml(value) + (suffix ? escapeHtml(suffix) : "") + "</b></span>";
+  }
+
+  function isEst(numbers, key) {
+    var n = (numbers || {})[key];
+    return !!(n && n.basis === "estimate");
+  }
+  function fmtInt(v) { return v == null ? null : Math.round(v).toLocaleString(); }
+  function fmtMoneyMaybe(v) { return v == null ? null : money(v); }
+  function shortUnit(u) {
+    u = String(u || "unit");
+    // "one cookie" -> "cookie", "one 30-minute walk" -> "30-minute walk"
+    return u.replace(/^one\s+/i, "").split(" ").slice(0, 3).join(" ");
+  }
+
+  // Draw the little character at the top of each agent card (same scripts as the team screen).
+  function drawPlanCharacters() {
+    var map = {
+      "c-plan-market": window.createMarket,
+      "c-plan-legal": window.createQuill,
+      "c-plan-finance": window.createFinance,
+    };
+    Object.keys(map).forEach(function (id) {
+      var el = $(id);
+      if (el && map[id]) {
+        try { map[id](el).setState("done"); } catch (e) { /* non-fatal */ }
+      }
+    });
+  }
 
   function val(numObj) { return numObj && numObj.value != null ? Number(numObj.value) : null; }
   function fmtMoney(v) { return "$" + (Math.round(v * 100) / 100).toFixed(2).replace(/\.00$/, ""); }

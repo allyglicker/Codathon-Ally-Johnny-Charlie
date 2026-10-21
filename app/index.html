@@ -132,6 +132,22 @@ button:disabled { opacity: .45; cursor: default; }
 .card h3 { font-family: var(--f-display); font-size: 18px; font-weight: 600; margin: 0; }
 .card ul, .card ol { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 .card li { font-size: 14px; }
+.agentcards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.agentcard { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; }
+.agentcard .head { display: flex; align-items: center; gap: 10px; }
+.agentcard canvas { width: 64px; height: 62px; aspect-ratio: 270 / 260; flex: 0 0 auto; }
+.agentcard .who-name { font-family: var(--f-display); font-size: 18px; font-weight: 600; margin: 0; line-height: 1.1; }
+.agentcard .who-role { font-size: 12.5px; color: var(--muted); margin: 0; }
+.agentcard .deliv { font-family: var(--f-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.agentcard .sum { font-size: 13.5px; margin: 0; }
+.agentcard ul { margin: 0; padding-left: 16px; display: grid; gap: 4px; }
+.agentcard li { font-size: 13px; }
+.agentcard .nums { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.agentcard .numchip { font-family: var(--f-mono); font-size: 12px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; }
+.agentcard .numchip b { font-weight: 600; }
+.agentcard .numchip.est { border-style: dashed; border-color: var(--warn); }
+.section-head { font-family: var(--f-display); font-size: 20px; font-weight: 600; margin: 4px 0 -4px; }
+.section-sub { color: var(--muted); margin: 0 0 2px; font-size: 13.5px; }
 .pricebox { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 10px; }
 .pricebox .row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .pricebox .price { font-family: var(--f-display); font-size: 28px; font-weight: 600; }
@@ -152,6 +168,7 @@ button:disabled { opacity: .45; cursor: default; }
   #n-ward { grid-area: ward; } #n-founder { grid-area: founder; }
   .desk { grid-template-columns: minmax(0,1fr); }
   .bignums { grid-template-columns: 1fr; }
+  .agentcards { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .folder { transition: none !important; } }
 </style>
