@@ -229,12 +229,13 @@
     resetDesk();
     var events = result.events || [];
     var i = 0;
-    var stepDelay = result.mode === "demo" ? 1100 : 850;
+    // Paced slow on purpose so an audience can follow each handoff as it happens.
+    var stepDelay = result.mode === "demo" ? 2000 : 1600;
 
     (function tick() {
       if (i >= events.length) {
-        // Hold the final frame briefly, then show the roadmap.
-        setTimeout(function () { renderPlan(result); showScreen("plan"); }, 900);
+        // Hold the final frame a beat longer, then show the roadmap.
+        setTimeout(function () { renderPlan(result); showScreen("plan"); }, 1500);
         return;
       }
       applyEvent(events[i], result);
@@ -336,7 +337,8 @@
     f.className = "folder" + (ev.est ? " est" : "") + (isNote ? " note" : "") + (isFinal ? " final" : "");
     f.innerHTML = '<span class="lbl">' + escapeHtml((ev.frm || "") ) + "</span><span class=\"tab\">" + escapeHtml(ev.tab) + "</span>";
     f.style.transform = "translate(" + (a.x - 75) + "px," + (a.y - 20) + "px)";
-    f.style.transition = "transform .8s cubic-bezier(.4,.1,.2,1), opacity .3s";
+    // Slow glide so the audience can watch the folder travel and read its tab.
+    f.style.transition = "transform 1.4s cubic-bezier(.4,.1,.2,1), opacity .4s";
     fly.appendChild(f);
 
     requestAnimationFrame(function () {
@@ -344,8 +346,9 @@
         f.style.transform = "translate(" + (b.x - 75) + "px," + (b.y - 20) + "px)";
       });
     });
-    setTimeout(function () { f.style.opacity = "0"; }, 820);
-    setTimeout(function () { f.remove(); }, 1150);
+    // Let it rest at the destination before fading, so the handoff reads clearly.
+    setTimeout(function () { f.style.opacity = "0"; }, 1700);
+    setTimeout(function () { f.remove(); }, 2150);
   }
 
   // Map a folder's frm/to name (Ward, Scout, Quill, Penny, Founder) to a slot node.
