@@ -1,0 +1,284 @@
+{
+  "scenario": "cookies",
+  "keywords": [
+    "cookie",
+    "bake",
+    "bakery",
+    "dessert",
+    "treat",
+    "cake",
+    "brownie"
+  ],
+  "founder_profile": {
+    "idea": "Homemade cookies sold from my kitchen",
+    "location": "Milledgeville, GA",
+    "startup_budget": 1500,
+    "hours_per_week": 10,
+    "timeline": "Open within 3 months",
+    "experience": "Has baked for 5 years, no business experience"
+  },
+  "market": {
+    "agent": "customer_market",
+    "summary": "Steady local demand for fresh homemade cookies at farmers markets, events and in-state online orders. Start at $3.50 a cookie.",
+    "key_findings": [
+      "Best customers: farmers market shoppers, local event planners and in-state online orders",
+      "About 120 customers a month, buying about 3 cookies each, once she's established",
+      "Under a cottage food license, sales must go direct to customers (no coffee shops or stores)",
+      "Fresh, local and custom orders are how she stands out"
+    ],
+    "numbers": {
+      "price_per_unit": {
+        "value": 3.5,
+        "unit": "USD",
+        "basis": "estimate"
+      },
+      "est_monthly_customers": {
+        "value": 120,
+        "unit": "customers/month",
+        "basis": "estimate"
+      },
+      "units_per_customer_per_month": {
+        "value": 3,
+        "unit": "cookies/customer/month",
+        "basis": "estimate"
+      },
+      "price_range_low": {
+        "value": 3.0,
+        "unit": "USD",
+        "basis": "estimate"
+      },
+      "price_range_high": {
+        "value": 4.5,
+        "unit": "USD",
+        "basis": "estimate"
+      }
+    },
+    "assumptions": [
+      "Customer count assumes steady word of mouth after the first month",
+      "Competitor count is an estimate; confirm with a local search",
+      "No paid marketing at first: word of mouth and free local social media groups"
+    ],
+    "risks": [
+      {
+        "risk": "Demand may drop during college breaks",
+        "severity": "medium"
+      }
+    ],
+    "needs_from_others": [
+      {
+        "agent": "finance",
+        "request": "Check whether $3.50 covers ingredient and packaging costs"
+      }
+    ],
+    "next_steps": [
+      "Have 10 people taste your cookies and say what they would pay",
+      "Post in two local community groups to test interest"
+    ],
+    "unit_definition": "one cookie",
+    "signal": "clear",
+    "tab": "$3.50/cookie \u00b7 120 customers/mo",
+    "responses_to_others": []
+  },
+  "legal": {
+    "agent": "legal",
+    "signal": "clear",
+    "tab": "$190 setup \u00b7 $175/yr",
+    "summary": "You can legally sell homemade cookies from your Milledgeville kitchen with a Georgia Cottage Food License. Expect about $190 to get set up and about $175 a year after that. The big limit is that you can sell only directly to customers, not to stores or coffee shops.",
+    "key_findings": [
+      "Cookies are allowed under Georgia's Cottage Food License ($100 a year from the Georgia Dept. of Agriculture), so you don't need a commercial kitchen.",
+      "You can sell at markets, events and online within Georgia, but not to stores, restaurants or coffee shops, and you can't ship out of state.",
+      "Every bag needs a label with your name and address, ingredients, allergens, weight and the state's cottage food statement.",
+      "Starting as a sole proprietor costs nothing extra. An LLC would add $110 to file and $60 a year, and it keeps business debts separate from your savings.",
+      "You also need a Milledgeville business license, a free EIN (federal tax ID) and a free Georgia sales tax registration."
+    ],
+    "numbers": {
+      "legal_setup_cost": {
+        "value": 190,
+        "unit": "USD",
+        "basis": "estimate",
+        "source": "Georgia Dept. of Agriculture; food handler course; City of Milledgeville (not confirmed)"
+      },
+      "annual_license_fees": {
+        "value": 175,
+        "unit": "USD",
+        "basis": "estimate",
+        "source": "Georgia Dept. of Agriculture; City of Milledgeville (not confirmed)"
+      },
+      "fee_cottage_food_license": {
+        "value": 100,
+        "unit": "USD",
+        "basis": "calculated",
+        "source": "Georgia Dept. of Agriculture"
+      },
+      "fee_food_safety_training": {
+        "value": 15,
+        "unit": "USD",
+        "basis": "estimate",
+        "source": "Typical food handler course price"
+      },
+      "fee_city_business_license": {
+        "value": 75,
+        "unit": "USD",
+        "basis": "estimate",
+        "source": "City of Milledgeville (not confirmed)"
+      }
+    },
+    "assumptions": [
+      "Demo mode: legal figures come from Nuer's demo reference card, not a live lookup. Confirm before acting.",
+      "Assumed sole proprietorship, since the founder is starting small with no partners.",
+      "Milledgeville business license fee is a placeholder estimate; the real fee depends on the city's tax schedule.",
+      "Assumed the cookies don't need refrigeration (no cream cheese frosting or custard fillings)."
+    ],
+    "risks": [
+      {
+        "risk": "Selling to coffee shops or stores later would require a licensed commercial kitchen, not the cottage license.",
+        "severity": "medium"
+      },
+      {
+        "risk": "Missing the required label statement or allergen list can get product pulled at markets.",
+        "severity": "medium"
+      },
+      {
+        "risk": "Local zoning could restrict a home-based business at this address; check before applying.",
+        "severity": "medium"
+      }
+    ],
+    "needs_from_others": [
+      {
+        "agent": "finance",
+        "request": "Add $190 legal setup cost and $175 in annual license fees (both estimates) to the budget."
+      },
+      {
+        "agent": "customer_market",
+        "request": "Plan sales channels around direct-to-customer only: markets, events and in-state online orders. No store or coffee shop accounts."
+      }
+    ],
+    "next_steps": [
+      "Call Milledgeville's planning and zoning office to confirm a home-based food business is allowed at your address.",
+      "Take an ANSI-accredited food handler course online and save the certificate.",
+      "Apply for the Georgia Cottage Food License with the certificate and a notarized affidavit."
+    ]
+  },
+  "finance_raw": {
+    "agent": "finance",
+    "summary": "Ingredients, bag and label come to about $1.75 per cookie. Market booth fees are the biggest monthly bill.",
+    "startup_cost_items": [
+      {
+        "item": "Stand mixer",
+        "cost": 300
+      },
+      {
+        "item": "Pans and baking tools",
+        "cost": 150
+      },
+      {
+        "item": "First batch of supplies",
+        "cost": 200
+      },
+      {
+        "item": "Labels and packaging",
+        "cost": 100
+      },
+      {
+        "item": "Logo and simple website",
+        "cost": 100
+      }
+    ],
+    "unit_cost_items": [
+      {
+        "item": "Ingredients per cookie",
+        "cost": 1.25
+      },
+      {
+        "item": "Bag and label",
+        "cost": 0.4
+      },
+      {
+        "item": "Card fees (about 3%)",
+        "cost": 0.1
+      }
+    ],
+    "monthly_fixed_cost_items": [
+      {
+        "item": "Farmers market booth fees",
+        "cost": 450
+      },
+      {
+        "item": "Insurance",
+        "cost": 40
+      },
+      {
+        "item": "Website hosting",
+        "cost": 20
+      }
+    ],
+    "key_findings": [
+      "Ingredients are your biggest per-cookie cost",
+      "Monthly bills are low because you bake from home",
+      "You keep most of each sale after costs"
+    ],
+    "assumptions": [
+      "Ingredient prices based on typical grocery prices; check two local stores"
+    ],
+    "risks": [
+      {
+        "risk": "Butter and egg prices can swing, which changes your cost per cookie",
+        "severity": "low"
+      }
+    ],
+    "needs_from_others": [],
+    "next_steps": [
+      "Price your 3 biggest ingredients at two local stores",
+      "Open a separate bank account for the business"
+    ],
+    "responses_to_others": [
+      {
+        "agent": "customer_market",
+        "request": "Check whether $3.50 covers ingredient and packaging costs",
+        "answer": "Yes, but not by much. Ingredients, bag, label and card fees come to about $1.75, so each cookie leaves about $1.75 toward bills."
+      }
+    ],
+    "signal": "clear",
+    "tab": "$1,040 start \u00b7 break-even 300/mo"
+  },
+  "manager": {
+    "exchanges": [
+      {
+        "from": "Ward",
+        "to": "Penny",
+        "value": "Re-run break-even at $5",
+        "kind": "conflict",
+        "recheck_price": 5
+      }
+    ],
+    "roadmap": {
+      "one_sentence": "Homemade cookies for Milledgeville shoppers at markets, events and in-state online orders.",
+      "verdict": "launch_with_changes",
+      "verdict_title": "Launch with changes",
+      "verdict_text": "Price at $5 a cookie, keep sales direct to customers, and plan for about 200 cookies a month.",
+      "watch_out": [
+        {
+          "title": "Your hours are the limit",
+          "text": "Break-even at $3.50 needs 300 cookies a month, but 10 hours a week lets you bake about 200.",
+          "how_found": "Ward compared Penny's break-even with your hours and asked Penny to re-run at $5: break-even drops to 162.",
+          "fix": {
+            "label": "Try $5 a cookie",
+            "price": 5
+          }
+        },
+        {
+          "title": "Direct sales only",
+          "text": "Quill found that a cottage food license means selling straight to customers. No coffee shops or stores."
+        }
+      ],
+      "first_steps": [
+        "Call the city about zoning for a home bakery",
+        "Take a food handler course",
+        "Apply for the Cottage Food License",
+        "Design your labels",
+        "Book your first farmers market"
+      ],
+      "go_verdict": "Launch with changes: price at $5, sell direct, and plan around about 200 cookies a month."
+    }
+  }
+}

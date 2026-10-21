@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Neur Crew Preview</title>
+<style>
+:root{--bg:#F2EFE9;--panel:#fff;--ink:#1F1A16;--muted:#6B6158;--line:#DDD5CA}
+@media (prefers-color-scheme:dark){:root{--bg:#15120F;--panel:#1E1A16;--ink:#EDE6DD;--muted:#A89C90;--line:#352E28}}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif;padding:20px 16px}
+.wrap{max-width:1100px;margin:0 auto}h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:22px 0 8px}p{margin:0 0 12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;display:grid;gap:6px;justify-items:center}
+canvas{width:100%;max-width:250px;aspect-ratio:270/260;display:block}
+.name{font-weight:600}.role{font-size:13px;color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+button{font:500 13px system-ui;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button[aria-pressed=true]{background:#3E7B4F;border-color:#3E7B4F;color:#fff}
+</style></head><body><div class="wrap">
+<h1>The Neur crew</h1>
+<p>Scout, Quill and Penny side by side, the way they sit in the Launch Desk. Use the buttons to switch each one's state.</p>
+<div class="grid" id="crew"></div>
+<h2>Scout, every state</h2><div class="grid" id="scout"></div>
+<h2>Penny, every state</h2><div class="grid" id="penny"></div>
+</div>
+<script>/* quill.js: Quill, Nuer's Legal & Compliance agent, drawn on a <canvas>.
+   No dependencies. Plain JavaScript.
+
+   Usage:
+     const quill = createQuill(document.getElementById("quill"));
+     quill.setState("researching");   // idle | researching | flagging | approved
+     quill.getState();
+     quill.destroy();                 // stops the animation loop
+
+   Event mapping (from the Legal handoff, B.4):
+     legal.received -> "researching"
+     legal.search   -> stay "researching"
+     legal.blocker  -> "flagging"
+     legal.done     -> "approved" (or stay "flagging" if a blocker was raised)
+*/
+(function (root) {
+  "use strict";
+
+  // Character palette. Fixed on purpose: Quill looks the same on light and dark pages.
+  var C = {
+    line: "#3A2A1F",
+    feather: "#8A5A3B",
+    featherDark: "#6A432C",
+    face: "#F3E3C7",
+    belly: "#EAD3AC",
+    vest: "#4F6D8C",
+    vestDark: "#3C5671",
+    brass: "#C9A04A",
+    beak: "#D89A3A",
+    iris: "#E8B23A",
+    pupil: "#1E1612",
+    glass: "#2F2A26",
+    seal: "#B8322A",
+    check: "#2F8A4E",
+    pole: "#5B4636",
+    paper: "#FBF6EC",
+    shadow: "rgba(20, 14, 10, 0.16)"
+  };
+  var W = 270, H = 260;            // design units; scaled to fit any canvas (owl drawn in a 220-wide box, offset 25)
+  var STATES = ["idle", "researching", "flagging", "approved"];
+  // Universal Neur states (integration handoff, Part 5) map onto Quill's own poses.
+  var ALIAS = { waiting: "idle", working: "researching", done: "approved" };
+  function canon(name) { return ALIAS[name] || name; }
+
+  function createQuill(canvas, opts) {
+    opts = opts || {};
+    var ctx = canvas.getContext("2d");
+    var state = STATES.indexOf(canon(opts.state)) >= 0 ? canon(opts.state) : "idle";
+    var stateStart = performance.now();
+    var raf = 0;
+    var reduce = !!(root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+    function resize() {
+      var dpr = root.devicePixelRatio || 1;
+      var r = canvas.getBoundingClientRect();
+      var w = Math.max(1, Math.round(r.width * dpr));
+      var h = Math.max(1, Math.round(r.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    }
+
+    // ---------- drawing helpers ----------
+    function ell(x, y, rx, ry, fill, rot, noStroke) {
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx, ry, rot || 0, 0, Math.PI * 2);
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (!noStroke) ctx.stroke();
+    }
+    function poly(pts, fill) {
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.closePath();
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      ctx.stroke();
+    }
+    function line(x1, y1, x2, y2, color, width) {
+      ctx.save();
+      ctx.strokeStyle = color || C.line;
+      ctx.lineWidth = width || 3;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.restore();
+    }
+    // Wing from a shoulder pivot. a = how far it swings outward (0 = hanging down).
+    // side = +1 for Quill's left (viewer's right), -1 for the other wing.
+    function wingTip(px, py, a, side, len) {
+      return [px + side * Math.sin(a) * len, py + Math.cos(a) * len];
+    }
+    function wing(px, py, a, side) {
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(-side * a);
+      ell(0, 30, 15, 36, C.feather);
+      // three feather lines
+      ctx.save();
+      ctx.strokeStyle = C.featherDark; ctx.lineWidth = 2;
+      for (var i = -1; i <= 1; i++) {
+        ctx.beginPath(); ctx.moveTo(i * 6, 44); ctx.lineTo(i * 5, 60); ctx.stroke();
+      }
+      ctx.restore();
+      ctx.restore();
+    }
+
+    // ---------- props ----------
+    function magnifier(tx, ty, sweep) {
+      var lx = tx - 6, ly = ty - 18;
+      line(tx, ty + 4, lx, ly + 12, C.pole, 5);
+      ctx.save();
+      ctx.lineWidth = 4; ctx.strokeStyle = C.glass;
+      ctx.beginPath(); ctx.arc(lx, ly, 14, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(190, 220, 240, 0.45)"; ctx.fill(); ctx.stroke();
+      // glint
+      ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(lx, ly, 8, Math.PI * 1.1 + sweep * 0.3, Math.PI * 1.45 + sweep * 0.3); ctx.stroke();
+      ctx.restore();
+    }
+    function flag(tx, ty, time) {
+      var topY = ty - 74;
+      line(tx, ty + 6, tx, topY, C.pole, 4);
+      ctx.save();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = C.line; ctx.fillStyle = C.seal;
+      ctx.beginPath();
+      var fw = 46, fh = 28, n = 10;
+      ctx.moveTo(tx, topY);
+      for (var i = 0; i <= n; i++) {
+        var x = tx - (fw * i) / n;
+        ctx.lineTo(x, topY + Math.sin(time * 6 + i * 0.7) * 3 * (i / n));
+      }
+      for (var j = n; j >= 0; j--) {
+        var x2 = tx - (fw * j) / n;
+        ctx.lineTo(x2, topY + fh + Math.sin(time * 6 + j * 0.7) * 3 * (j / n));
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      // "!" mark
+      ctx.fillStyle = C.paper;
+      ctx.fillRect(tx - 25, topY + 6, 5, 11);
+      ctx.beginPath(); ctx.arc(tx - 22.5, topY + 22, 2.8, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      line(tx, topY - 2, tx, topY - 2, C.brass, 6);
+    }
+    function paperSheet(showMarks, sealPop) {
+      ctx.save();
+      ctx.translate(178, 222);
+      ctx.rotate(-0.06);
+      ctx.lineWidth = 2.5; ctx.strokeStyle = C.line;
+      ctx.fillStyle = C.paper;
+      ctx.beginPath(); ctx.rect(-26, -18, 52, 34); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = "rgba(58,42,31,0.35)"; ctx.lineWidth = 1.5;
+      for (var i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-20, -10 + i * 7); ctx.lineTo(4, -10 + i * 7); ctx.stroke(); }
+      if (showMarks) {
+        // green check
+        ctx.strokeStyle = C.check; ctx.lineWidth = 3.5; ctx.lineCap = "round"; ctx.lineJoin = "round";
+        ctx.beginPath(); ctx.moveTo(-19, 8); ctx.lineTo(-13, 13); ctx.lineTo(-3, 1); ctx.stroke();
+        // red wax seal
+        var r = 9 * sealPop;
+        ctx.fillStyle = C.seal; ctx.strokeStyle = C.line; ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var k = 0; k < 14; k++) {
+          var ang = (k / 14) * Math.PI * 2, rr = r * (k % 2 ? 0.86 : 1);
+          ctx.lineTo(13 + Math.cos(ang) * rr, 5 + Math.sin(ang) * rr);
+        }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.beginPath(); ctx.arc(13, 5, r * 0.45, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+    function stamp(tx, ty) {
+      line(tx, ty - 2, tx, ty + 20, C.pole, 5);
+      ctx.save();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = C.line;
+      ell(tx, ty - 4, 6, 6, C.seal);
+      ctx.fillStyle = C.brass;
+      ctx.beginPath(); ctx.rect(tx - 11, ty + 20, 22, 8); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+
+    // ---------- the owl ----------
+    function draw(now) {
+      resize();
+      var cw = canvas.width, ch = canvas.height;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+      var s = Math.min(cw / W, ch / H);
+      ctx.setTransform(s, 0, 0, s, (cw - W * s) / 2 + 25 * s, (ch - H * s) / 2);
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      ctx.strokeStyle = C.line; ctx.lineWidth = 3;
+
+      var time = reduce ? 0 : now / 1000;
+      var st = reduce ? 10 : (now - stateStart) / 1000;
+      var bob = reduce ? 0 : Math.sin(time * 2) * 2.5;
+
+      // ground shadow and feet (don't bob)
+      ell(110, 240, 58, 8, C.shadow, 0, true);
+      ctx.save(); ctx.lineWidth = 2;
+      [[92, 232], [128, 232]].forEach(function (f) {
+        for (var i = -1; i <= 1; i++) ell(f[0] + i * 6, f[1], 4.5, 6, C.beak);
+      });
+      ctx.restore();
+
+      if (state === "approved") paperSheet(st > 0.75, Math.min(1, Math.max(0, (st - 0.75) * 5)));
+
+      ctx.save();
+      ctx.translate(0, bob);
+
+      // ear tufts (behind head)
+      var lift = state === "flagging" ? 9 + Math.sin(time * 9) * 1.5 : state === "researching" ? 3 : 0;
+      poly([[68, 50], [58, 16 - lift], [86, 38]], C.featherDark);
+      poly([[152, 50], [162, 16 - lift], [134, 38]], C.featherDark);
+
+      // body + vest + belly
+      ell(110, 152, 64, 72, C.feather);
+      ctx.save();
+      ctx.beginPath(); ctx.ellipse(110, 152, 64, 72, 0, 0, Math.PI * 2); ctx.clip();
+      ctx.fillStyle = C.vest; ctx.fillRect(40, 116, 140, 120);
+      ctx.restore();
+      ell(110, 166, 34, 50, C.belly);
+      // belly feather marks
+      ctx.save(); ctx.strokeStyle = "rgba(106,67,44,0.5)"; ctx.lineWidth = 2;
+      [[100, 150], [118, 156], [104, 172], [120, 180], [108, 194]].forEach(function (p) {
+        ctx.beginPath(); ctx.arc(p[0], p[1], 4, 0.2, Math.PI - 0.2); ctx.stroke();
+      });
+      ctx.restore();
+      ell(110, 152, 64, 72, null);           // re-stroke body outline over vest
+      ell(62, 150, 4, 4, C.brass);           // buttons
+      ell(64, 172, 4, 4, C.brass);
+      // vest pocket with a quill pen
+      line(154, 162, 164, 128, C.pole, 2.5);
+      ell(164, 134, 4, 11, C.paper, 0.3);
+      ctx.save(); ctx.fillStyle = C.vestDark;
+      ctx.beginPath(); ctx.rect(146, 156, 20, 14); ctx.fill(); ctx.stroke(); ctx.restore();
+
+      // wings and props
+      var pivL = [62, 124], pivR = [158, 124];   // viewer's left / right shoulders
+      var aL = 0.2, aR = 0.2;
+      if (state === "idle") { aL = 0.18 + Math.sin(time * 2) * 0.03; aR = aL; }
+      if (state === "researching") aR = 2.15 + Math.sin(st * 2.2) * 0.28;
+      if (state === "flagging") aL = 2.45 + Math.sin(time * 6) * 0.05;
+      if (state === "approved") {
+        var p = (st % 1.6) / 1.6;                       // stamp cycle
+        var press = p < 0.45 ? p / 0.45 : p < 0.6 ? 1 : 1 - (p - 0.6) / 0.4;
+        aR = 1.25 - press * 0.75;
+      }
+      wing(pivL[0], pivL[1], aL, -1);
+      wing(pivR[0], pivR[1], aR, 1);
+
+      // head (drawn after wings so raised wings tuck behind it)
+      ell(110, 82, 60, 52, C.feather);
+      ell(88, 86, 25, 24, C.face);
+      ell(132, 86, 25, 24, C.face);
+
+      // eyes
+      var lookX = 0, lookY = 0, lid = 0;
+      if (state === "researching") { lookX = Math.sin(st * 2.2) * 4.5; lookY = -1; }
+      if (state === "flagging") { lookY = -3; lookX = -2; }
+      if (state === "approved") lid = 0.38;
+      if (state === "idle" && !reduce) {
+        var b = time % 3.6;
+        if (b < 0.16) lid = 1 - Math.abs(b - 0.08) / 0.08;
+      }
+      [88, 132].forEach(function (ex) {
+        var ey = 86;
+        ell(ex, ey, 13, 13, C.iris);
+        ctx.save();
+        ctx.beginPath(); ctx.arc(ex, ey, 13, 0, Math.PI * 2); ctx.clip();
+        ell(ex + lookX, ey + lookY, 6.5, 6.5, C.pupil, 0, true);
+        ell(ex + lookX - 2.5, ey + lookY - 3, 2.2, 2.2, "#FFFFFF", 0, true);
+        if (lid > 0) { ctx.fillStyle = C.feather; ctx.fillRect(ex - 14, ey - 14, 28, 28 * lid); }
+        ctx.restore();
+        ctx.save(); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(ex, ey, 13, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      });
+
+      // glasses
+      ctx.save();
+      ctx.strokeStyle = C.glass; ctx.lineWidth = 2.6;
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      [88, 132].forEach(function (ex) { ctx.beginPath(); ctx.arc(ex, 86, 17, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+      ctx.beginPath(); ctx.moveTo(105, 84); ctx.quadraticCurveTo(110, 79, 115, 84); ctx.stroke();
+      ctx.restore();
+
+      // brows
+      var bw = 3.5, bc = C.featherDark;
+      if (state === "flagging") {               // worried: inner ends up
+        line(74, 66, 98, 58, bc, bw); line(122, 58, 146, 66, bc, bw);
+      } else if (state === "researching") {     // one brow raised, focused
+        line(74, 58, 98, 60, bc, bw); line(122, 64, 146, 64, bc, bw);
+      } else if (state === "approved") {        // relaxed arcs
+        ctx.save(); ctx.strokeStyle = bc; ctx.lineWidth = bw;
+        ctx.beginPath(); ctx.arc(86, 70, 13, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+        ctx.beginPath(); ctx.arc(134, 70, 13, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+        ctx.restore();
+      } else {
+        line(76, 63, 98, 63, bc, bw); line(122, 63, 144, 63, bc, bw);
+      }
+
+      // beak
+      poly([[103, 100], [117, 100], [110, 115]], C.beak);
+
+      // props in the raised wing
+      if (state === "researching") {
+        var tR = wingTip(pivR[0], pivR[1], aR, 1, 56);
+        magnifier(tR[0], tR[1], Math.sin(st * 2.2));
+      }
+      if (state === "flagging") {
+        var tL = wingTip(pivL[0], pivL[1], aL, -1, 56);
+        flag(tL[0], tL[1], time);
+      }
+      if (state === "approved") {
+        var tS = wingTip(pivR[0], pivR[1], aR, 1, 58);
+        ctx.restore();                     // stamp lives in ground space so it lands on the paper
+        stamp(tS[0], tS[1] + bob);
+        ctx.save();
+      }
+      ctx.restore();
+
+      if (!reduce) raf = root.requestAnimationFrame(draw);
+    }
+
+    function start() {
+      root.cancelAnimationFrame(raf);
+      raf = root.requestAnimationFrame(draw);
+    }
+
+    var api = {
+      setState: function (next) {
+        var asked = next; next = canon(next);
+        if (STATES.indexOf(next) < 0) throw new Error("Unknown Quill state: " + asked + ". Use one of: " + STATES.concat(Object.keys(ALIAS)).join(", "));
+        if (next !== state) { state = next; stateStart = performance.now(); }
+        start();
+      },
+      getState: function () { return state; },
+      destroy: function () { root.cancelAnimationFrame(raf); }
+    };
+    if (reduce && root.addEventListener) root.addEventListener("resize", start);
+    start();
+    return api;
+  }
+
+  root.createQuill = createQuill;
+  if (typeof module !== "undefined" && module.exports) module.exports = { createQuill: createQuill };
+})(typeof window !== "undefined" ? window : this);
+</script>
+<script>/*
+ * market.js: Scout, the Customer & Market agent for the Neur Launch Desk demo.
+ * A friendly platypus: taupe fur, a wide slate-gray bill, webbed feet, a flat paddle tail,
+ * a forest-green vest over a cream shirt. Props: clipboard and pencil, a yellow sticky note, a price tag.
+ *
+ * Usage:
+ *   const scout = createMarket(canvas, opts);   // opts: { state: "idle" }
+ *   scout.setState("researching");              // idle | researching | reading-note | done
+ *   scout.getState();
+ *   scout.destroy();                            // stops the animation loop
+ *
+ * States and the demo event that triggers each:
+ *   idle          reset(), before work arrives: relaxed, blinking, tail swaying
+ *   researching   profile received from Ward: clipboard up, pencil ticking boxes, eyes on the list
+ *   reading-note  Quill's note lands ("Direct sales only. No coffee shops."): holds the note up, head tilted, brows raised
+ *   done          handoff sent to Ward: holds up a "$3.50" price tag with a green check, hand on hip, happy hop
+ *
+ * Style matches quill.js / ward.js: 270 x 260 design box, outline #3A2A1F at lineWidth 3,
+ * round joins and caps, flat fills only, soft ground shadow at the feet.
+ * Motion: breathing bob and blinks (~3.6 s); tail sway; pencil ticks and checks filling in while researching;
+ * a gentle head tilt while reading the note; a hop, tag swing and tail wag when done.
+ * With prefers-reduced-motion, each state draws once as a still pose and no loop runs.
+ * Deferred hooks (not built): "flagging" state, speech bubbles, reacting to passing folders, click-to-inspect.
+ */
+(function () {
+  "use strict";
+
+  var W = 270, H = 260;
+  var STATES = ["idle", "researching", "reading-note", "done"];
+  var O = "#3A2A1F";
+
+  // Fixed palette: the same on light and dark pages.
+  var C = {
+    fur: "#A57B5E",
+    furDark: "#7E5A42",
+    belly: "#D9BFA4",
+    bill: "#5D6169",
+    billDark: "#43464D",
+    shirt: "#F6EBD6",
+    vest: "#3E7B4F",
+    vestDark: "#2D5C3A",
+    brass: "#C9A04A",
+    eye: "#1E1612",
+    shine: "#FFFFFF",
+    board: "#9A7350",
+    paper: "#FBF6EC",
+    clip: "#8E8E8E",
+    pencil: "#E3A83C",
+    pencilTip: "#3A2A1F",
+    ink: "#9C9184",
+    note: "#F5E27A",
+    tag: "#FBF6EC",
+    string: "#8A5A3B",
+    check: "#2F8A4E",
+    shadow: "rgba(20,14,10,0.16)"
+  };
+
+  // ---------- helpers ----------
+  function line(ctx, w, color) {
+    ctx.strokeStyle = color || O; ctx.lineWidth = w || 3;
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+  }
+  function fillStroke(ctx, fill, w) { ctx.fillStyle = fill; ctx.fill(); line(ctx, w); ctx.stroke(); }
+  function ellipse(ctx, x, y, rx, ry, fill, w, rot) {
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot || 0, 0, Math.PI * 2);
+    if (w === 0) { ctx.fillStyle = fill; ctx.fill(); } else fillStroke(ctx, fill, w);
+  }
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function path(ctx, pts) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); }
+  // Ward's sleeve trick: dark line at width + 6, then the fill color on top.
+  function sleeve(ctx, pts, width, color) {
+    path(ctx, pts); line(ctx, width + 6); ctx.stroke();
+    path(ctx, pts); line(ctx, width, color); ctx.stroke();
+  }
+  function hand(ctx, x, y) {
+    // small webbed hand: three rounded toes
+    ellipse(ctx, x, y, 8, 7, C.bill, 2.5);
+    line(ctx, 1.8, C.billDark);
+    ctx.beginPath(); ctx.moveTo(x - 3, y + 2); ctx.lineTo(x - 3, y + 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 3, y + 2); ctx.lineTo(x + 3, y + 6); ctx.stroke();
+  }
+  function arm(ctx, pts) { sleeve(ctx, pts, 13, C.fur); var e = pts[pts.length - 1]; hand(ctx, e[0], e[1]); }
+  function check(ctx, x, y, s) {
+    ctx.beginPath(); ctx.moveTo(x - 7 * s, y); ctx.lineTo(x - 2 * s, y + 6 * s); ctx.lineTo(x + 9 * s, y - 7 * s);
+    line(ctx, 4.5 * s, C.check); ctx.stroke();
+  }
+
+  // ---------- body parts ----------
+  function shadow(ctx) { ctx.beginPath(); ctx.ellipse(135, 241, 64, 8, 0, 0, Math.PI * 2); ctx.fillStyle = C.shadow; ctx.fill(); }
+
+  function tail(ctx, sway) {
+    ctx.save();
+    ctx.translate(170, 214); ctx.rotate(-0.35 + sway);
+    ellipse(ctx, 34, 0, 36, 15, C.furDark);
+    line(ctx, 2, "rgba(58,42,31,0.35)");
+    for (var i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(18 + i * 12, -8); ctx.lineTo(24 + i * 12, 8); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  function foot(ctx, x) {
+    rrect(ctx, x - 9, 202, 18, 28, 7); fillStroke(ctx, C.fur);
+    ctx.beginPath();
+    ctx.moveTo(x - 15, 236); ctx.quadraticCurveTo(x - 14, 224, x, 224); ctx.quadraticCurveTo(x + 14, 224, x + 15, 236);
+    ctx.quadraticCurveTo(x + 10, 233, x + 5, 237); ctx.quadraticCurveTo(x, 233, x - 5, 237); ctx.quadraticCurveTo(x - 10, 233, x - 15, 236);
+    ctx.closePath(); fillStroke(ctx, C.bill, 2.5);
+  }
+
+  function body(ctx) {
+    ellipse(ctx, 135, 154, 56, 72, C.fur);
+    // shirt + vest, clipped to the body
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(135, 154, 56, 72, 0, 0, Math.PI * 2); ctx.clip();
+    ctx.beginPath(); ctx.moveTo(110, 176); ctx.lineTo(160, 176); ctx.lineTo(160, 232); ctx.lineTo(110, 232); ctx.closePath();
+    fillStroke(ctx, C.shirt);
+    ctx.beginPath(); ctx.moveTo(70, 174); ctx.lineTo(116, 174); ctx.lineTo(132, 218); ctx.lineTo(132, 232); ctx.lineTo(70, 232); ctx.closePath();
+    fillStroke(ctx, C.vest);
+    ctx.beginPath(); ctx.moveTo(200, 174); ctx.lineTo(154, 174); ctx.lineTo(138, 218); ctx.lineTo(138, 232); ctx.lineTo(200, 232); ctx.closePath();
+    fillStroke(ctx, C.vest);
+    ctx.restore();
+    ctx.beginPath(); ctx.ellipse(135, 154, 56, 72, 0, 0, Math.PI * 2); line(ctx, 3); ctx.stroke();
+    // shirt collar points
+    ctx.beginPath(); ctx.moveTo(118, 174); ctx.lineTo(127, 186); ctx.lineTo(135, 176); ctx.closePath(); fillStroke(ctx, C.shirt, 2.5);
+    ctx.beginPath(); ctx.moveTo(152, 174); ctx.lineTo(143, 186); ctx.lineTo(135, 176); ctx.closePath(); fillStroke(ctx, C.shirt, 2.5);
+    // brass buttons and a pocket
+    ellipse(ctx, 128, 202, 3.5, 3.5, C.brass, 2);
+    ellipse(ctx, 132, 215, 3.5, 3.5, C.brass, 2);
+    rrect(ctx, 156, 194, 18, 10, 2); fillStroke(ctx, C.vestDark, 2.5);
+  }
+
+  function eyes(ctx, mode, dx, dy) {
+    dx = dx || 0; dy = dy || 0;
+    [116, 154].forEach(function (x) {
+      var y = 110;
+      if (mode === "happy") {
+        ctx.beginPath(); ctx.arc(x, y + 4, 7, Math.PI * 1.12, Math.PI * 1.88); line(ctx, 3.5); ctx.stroke();
+      } else if (mode === "blink") {
+        ctx.beginPath(); ctx.moveTo(x - 6, y + 1); ctx.quadraticCurveTo(x, y + 4, x + 6, y + 1); line(ctx, 3.5); ctx.stroke();
+      } else {
+        ellipse(ctx, x + dx, y + dy, 6, 7.5, C.eye, 0);
+        ellipse(ctx, x + dx - 2, y + dy - 3, 2.3, 2.3, C.shine, 0);
+      }
+    });
+  }
+
+  function brows(ctx, mode) {
+    line(ctx, 3.5, C.furDark);
+    if (mode === "focused") {
+      ctx.beginPath(); ctx.moveTo(106, 94); ctx.lineTo(124, 98); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(164, 94); ctx.lineTo(146, 98); ctx.stroke();
+    } else if (mode === "curious") {
+      ctx.beginPath(); ctx.moveTo(106, 96); ctx.lineTo(124, 96); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(146, 92); ctx.quadraticCurveTo(155, 85, 164, 90); ctx.stroke();
+    } else if (mode === "up") {
+      ctx.beginPath(); ctx.moveTo(106, 93); ctx.quadraticCurveTo(115, 87, 124, 92); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(146, 92); ctx.quadraticCurveTo(155, 87, 164, 93); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(107, 96); ctx.quadraticCurveTo(115, 93, 123, 95); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(147, 95); ctx.quadraticCurveTo(155, 93, 163, 96); ctx.stroke();
+    }
+  }
+
+  function bill(ctx, mood) {
+    // wide, flat duck-like bill that flares out past the face
+    ctx.beginPath();
+    ctx.moveTo(110, 126);
+    ctx.quadraticCurveTo(135, 118, 160, 126);
+    ctx.quadraticCurveTo(187, 138, 185, 156);
+    ctx.quadraticCurveTo(181, 175, 135, 173);
+    ctx.quadraticCurveTo(89, 175, 85, 156);
+    ctx.quadraticCurveTo(83, 138, 110, 126);
+    ctx.closePath(); fillStroke(ctx, C.bill);
+    // lighter upper bill
+    ctx.beginPath();
+    ctx.moveTo(113, 130); ctx.quadraticCurveTo(135, 123, 157, 130);
+    ctx.quadraticCurveTo(177, 139, 177, 148); ctx.quadraticCurveTo(135, 155, 93, 148);
+    ctx.quadraticCurveTo(93, 139, 113, 130); ctx.closePath();
+    ctx.fillStyle = "#777C85"; ctx.fill();
+    ellipse(ctx, 127, 132, 2.8, 2.2, C.billDark, 0);
+    ellipse(ctx, 143, 132, 2.8, 2.2, C.billDark, 0);
+    line(ctx, 2.5, C.billDark);
+    if (mood === "happy") {
+      ctx.beginPath(); ctx.moveTo(102, 158); ctx.quadraticCurveTo(135, 176, 168, 158);
+      ctx.fillStyle = O; ctx.fill(); line(ctx, 2.5); ctx.stroke();
+    } else if (mood === "hm") {
+      ctx.beginPath(); ctx.moveTo(104, 162); ctx.quadraticCurveTo(135, 160, 166, 163); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(100, 159); ctx.quadraticCurveTo(135, 169, 170, 159); ctx.stroke();
+    }
+  }
+
+  // ---------- props ----------
+  function clipboard(ctx, ticks) {
+    ctx.save(); ctx.translate(106, 190); ctx.rotate(0.12);
+    rrect(ctx, -24, -32, 48, 62, 5); fillStroke(ctx, C.board);
+    rrect(ctx, -19, -24, 38, 50, 3); fillStroke(ctx, C.paper, 2.5);
+    rrect(ctx, -10, -37, 20, 10, 3); fillStroke(ctx, C.clip, 2.5);
+    for (var i = 0; i < 4; i++) {
+      var y = -14 + i * 11;
+      rrect(ctx, -14, y - 4, 8, 8, 1.5); fillStroke(ctx, C.paper, 1.8);
+      line(ctx, 2, C.ink); ctx.beginPath(); ctx.moveTo(-2, y); ctx.lineTo(12, y); ctx.stroke();
+      if (i < ticks) check(ctx, -10, y - 1, 0.45);
+    }
+    ctx.restore();
+  }
+
+  function pencil(ctx, x, y) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(-0.9);
+    rrect(ctx, -4, -26, 8, 26, 2); fillStroke(ctx, C.pencil, 2.5);
+    ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(4, 0); ctx.lineTo(0, 9); ctx.closePath(); fillStroke(ctx, C.paper, 2.5);
+    ctx.restore();
+  }
+
+  function stickyNote(ctx, x, y, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.beginPath(); ctx.rect(-19, -18, 38, 36); fillStroke(ctx, C.note, 2.5);
+    line(ctx, 2, "rgba(58,42,31,0.45)");
+    [-8, 0, 8].forEach(function (yy, i) { ctx.beginPath(); ctx.moveTo(-12, yy); ctx.lineTo(i === 2 ? 2 : 12, yy); ctx.stroke(); });
+    ctx.restore();
+  }
+
+  function priceTag(ctx, x, y, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    // string up to the hand
+    line(ctx, 2.5, C.string); ctx.beginPath(); ctx.moveTo(-24, 0); ctx.lineTo(-24, 14); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-26, 0); ctx.lineTo(-14, -15); ctx.lineTo(24, -15); ctx.lineTo(24, 15); ctx.lineTo(-14, 15); ctx.closePath();
+    fillStroke(ctx, C.tag);
+    ellipse(ctx, -16, 0, 2.6, 2.6, C.string, 2);
+    ctx.fillStyle = O; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("$3.50", 5, 1);
+    ctx.restore();
+  }
+
+  // ---------- poses ----------
+  function draw(ctx, state, time, st, reduce) {
+    time = time || 0; st = st === undefined ? 10 : st;
+    var still = !!reduce;
+    var blinking = !still && (time % 3.6) < 0.16;
+    var bob = still ? 0 : Math.sin(time * 2) * 2;
+    var hop = (state === "done" && !still && st < 0.7) ? -12 * Math.sin((st / 0.7) * Math.PI) : 0;
+    var sway = still ? 0 : Math.sin(time * 1.6) * 0.08;
+    if (state === "done" && !still) sway = -0.25 + Math.sin(time * 9) * 0.12;   // wag
+
+    ctx.save();
+    ctx.translate(135, 240); ctx.scale(1.18, 1.18); ctx.translate(-135, -240);
+    shadow(ctx);
+    ctx.save();
+    ctx.translate(0, hop);
+    tail(ctx, sway);
+    foot(ctx, 116); foot(ctx, 154);
+    ctx.translate(0, bob);
+    body(ctx);
+
+    if (state === "idle") {
+      eyes(ctx, blinking ? "blink" : "open"); brows(ctx); bill(ctx);
+      var s = still ? 0 : Math.sin(time * 2) * 2;
+      arm(ctx, [[88, 158], [78, 176], [82 - s, 198]]);
+      arm(ctx, [[182, 158], [192, 176], [188 + s, 198]]);
+    } else if (state === "researching") {
+      var tick = still ? 0 : Math.max(0, Math.sin(time * 12)) * 4;
+      var ticks = still ? 3 : Math.min(4, 1 + Math.floor(st / 1.1));
+      eyes(ctx, blinking ? "blink" : "open", -3, 3); brows(ctx, "focused"); bill(ctx);
+      arm(ctx, [[88, 158], [72, 190], [88, 214]]);
+      clipboard(ctx, ticks);
+      arm(ctx, [[182, 158], [170, 192], [132 - tick, 188 + tick]]);
+      pencil(ctx, 132 - tick, 188 + tick);
+    } else if (state === "reading-note") {
+      var tilt = still ? 0.07 : 0.07 + Math.sin(time * 1.5) * 0.02;
+      ctx.save(); ctx.translate(135, 140); ctx.rotate(tilt); ctx.translate(-135, -140);
+      eyes(ctx, blinking ? "blink" : "open", 3, -2); brows(ctx, "curious"); bill(ctx, "hm");
+      ctx.restore();
+      arm(ctx, [[88, 158], [78, 176], [82, 198]]);
+      arm(ctx, [[182, 158], [206, 140], [202, 112]]);
+      stickyNote(ctx, 206, 92, 0.12 + (still ? 0 : Math.sin(time * 1.5) * 0.04));
+    } else if (state === "done") {
+      var swing = still ? 0 : Math.sin(time * 4) * 0.08;
+      eyes(ctx, "happy"); brows(ctx, "up"); bill(ctx, "happy");
+      arm(ctx, [[88, 158], [68, 180], [94, 194]]);              // hand on hip
+      arm(ctx, [[182, 158], [204, 132], [196, 106]]);           // raised
+      priceTag(ctx, 218, 92, -0.1 + swing);
+      ellipse(ctx, 166, 74, 11, 11, C.check, 2.5);
+      ctx.save(); ctx.translate(166, 74);
+      ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(-2, 5); ctx.lineTo(7, -5); line(ctx, 3.5, "#FFFFFF"); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // ---------- public API (matches createQuill / createWard) ----------
+  function createMarket(canvas, opts) {
+    opts = opts || {};
+    var root = typeof window !== "undefined" ? window : {};
+    var ctx = canvas.getContext("2d");
+    var state = STATES.indexOf(opts.state) >= 0 ? opts.state : "idle";
+    var now = function () { return typeof performance !== "undefined" ? performance.now() : Date.now(); };
+    var stateStart = now();
+    var raf = 0;
+    var reduce = !!(root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    var raff = root.requestAnimationFrame ? root.requestAnimationFrame.bind(root) : function (f) { return setTimeout(function () { f(now()); }, 16); };
+    var caf = root.cancelAnimationFrame ? root.cancelAnimationFrame.bind(root) : clearTimeout;
+
+    function resize() {
+      var dpr = root.devicePixelRatio || 1;
+      var r = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : { width: canvas.width, height: canvas.height };
+      var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    }
+    function frame(ts) {
+      resize();
+      var cw = canvas.width, ch = canvas.height;
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cw, ch);
+      var s = Math.min(cw / W, ch / H);
+      ctx.setTransform(s, 0, 0, s, (cw - W * s) / 2, (ch - H * s) / 2);
+      var t = ts === undefined ? now() : ts;
+      draw(ctx, state, reduce ? 0 : t / 1000, reduce ? 10 : (t - stateStart) / 1000, reduce);
+      if (!reduce) raf = raff(frame);
+    }
+    function start() { caf(raf); raf = raff(frame); }
+
+    var api = {
+      setState: function (next) {
+        if (STATES.indexOf(next) < 0) throw new Error("Unknown Scout state: " + next + ". Use one of: " + STATES.join(", "));
+        if (next !== state) { state = next; stateStart = now(); }
+        start();
+      },
+      getState: function () { return state; },
+      destroy: function () { caf(raf); }
+    };
+    if (reduce && root.addEventListener) root.addEventListener("resize", start);
+    start();
+    return api;
+  }
+
+  createMarket.STATES = STATES.slice();
+  createMarket._draw = draw; // used by preview sheets
+
+  if (typeof window !== "undefined") window.createMarket = createMarket;
+  if (typeof module !== "undefined" && module.exports) module.exports = { createMarket: createMarket };
+})();
+</script>
+<script>/*
+ * finance.js: Penny, the Finance agent ("Money Coach") for the Neur Launch Desk demo.
+ * A sweet grandma piggy bank: white curly bun, pearls, a lavender cardigan with a flower brooch, a coin slot and a calculator.
+ *
+ * Usage:
+ *   const penny = createFinance(canvas, opts);   // opts: { state: "idle" }
+ *   penny.setState("waiting");                   // idle | waiting | calculating | done
+ *   penny.getState();
+ *   penny.destroy();
+ *
+ * States and the demo event that triggers each:
+ *   idle         reset(), before anything happens: arms relaxed at her sides, smiling
+ *   waiting      waiting on Customer & Market and Quill: arms folded, foot tapping, eyes glancing left
+ *   calculating  running the numbers (and again for Ward's follow-up): calculator up, tapping keys, paper tape curling out
+ *   done         handoff sent to Ward: holds up the printed tape with a green check, waves, happy eyes
+ *
+ * Style matches the shared spec: 270 x 260 design box, outline #3A2A1F at lineWidth 3,
+ * round joins and caps, flat fills only, soft ground shadow at the feet.
+ *
+ * Motion: breathing bob and blinks (~3.8 s) in every state; foot taps and drifting eyes while waiting;
+ * a tapping hoof and flickering digits while calculating; a hop on arrival, then a slow wave, when done.
+ * With prefers-reduced-motion, each state draws once as a still pose and no loop runs.
+ * Deferred hooks (not built): "flagging" state, speech bubbles, reacting to passing folders, click-to-inspect.
+ */
+(function () {
+  "use strict";
+
+  var W = 270, H = 260;
+  var STATES = ["idle", "waiting", "calculating", "done"];
+  var O = "#3A2A1F";
+
+  // Fixed palette: the same on light and dark pages.
+  var C = {
+    body: "#F7B5C3",
+    bodyDark: "#EC8FA4",
+    snout: "#F29CB0",
+    blush: "#F27D9A",
+    hoof: "#D9758D",
+    hair: "#F3EFE8",
+    hairShade: "#CFC7BC",
+    brow: "#9A8F86",
+    cardigan: "#9C7BB8",
+    cardiganDark: "#7B5C99",
+    pearl: "#FFFDF7",
+    brooch: "#F27D9A",
+    broochMid: "#F7D46B",
+    eye: "#3A2A1F",
+    shine: "#FFFFFF",
+    calc: "#4A4954",
+    calcScreen: "#D3E8C9",
+    calcKey: "#F4EEE2",
+    calcKeyHot: "#DE7F72",
+    tape: "#FFFBF2",
+    ink: "#9C9184",
+    check: "#2F8A4E",
+    shadow: "rgba(20,14,10,0.16)",
+    mouth: "#3A2A1F",
+    tongue: "#F27D9A"
+  };
+
+  // ---------- small drawing helpers ----------
+
+  function line(ctx, w) {
+    ctx.strokeStyle = O;
+    ctx.lineWidth = w || 3;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+  }
+
+  function fillStroke(ctx, fill, w) {
+    ctx.fillStyle = fill;
+    ctx.fill();
+    line(ctx, w);
+    ctx.stroke();
+  }
+
+  function ellipse(ctx, x, y, rx, ry, fill, w) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    if (w === 0) { ctx.fillStyle = fill; ctx.fill(); } else { fillStroke(ctx, fill, w); }
+  }
+
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function path(ctx, pts) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  }
+
+  // Ward's sleeve trick: dark line at width + 6, then the fill color on top.
+  function sleeve(ctx, pts, width, color) {
+    path(ctx, pts);
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    ctx.strokeStyle = O; ctx.lineWidth = width + 6; ctx.stroke();
+    path(ctx, pts);
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+  }
+
+  function arm(ctx, pts) {
+    sleeve(ctx, pts, 14, C.body);
+    var end = pts[pts.length - 1];
+    ellipse(ctx, end[0], end[1], 8, 8, C.hoof, 2.5);
+  }
+
+  function check(ctx, x, y, s) {
+    ctx.beginPath();
+    ctx.moveTo(x - 7 * s, y);
+    ctx.lineTo(x - 2 * s, y + 6 * s);
+    ctx.lineTo(x + 9 * s, y - 7 * s);
+    ctx.strokeStyle = C.check; ctx.lineWidth = 4.5 * s;
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.stroke();
+  }
+
+  // ---------- body parts ----------
+
+  function shadow(ctx) {
+    ctx.beginPath();
+    ctx.ellipse(135, 241, 62, 8, 0, 0, Math.PI * 2);
+    ctx.fillStyle = C.shadow; ctx.fill();
+  }
+
+  function leg(ctx, x, lift, tilt) {
+    ctx.save();
+    ctx.translate(x + 12, 205 - lift);
+    ctx.rotate(tilt || 0);
+    rrect(ctx, -12, -6, 24, 38, 9);
+    fillStroke(ctx, C.body);
+    rrect(ctx, -12, 22, 24, 10, 5);
+    fillStroke(ctx, C.hoof, 2.5);
+    ctx.restore();
+  }
+
+  function tail(ctx) {
+    var pts = [[200, 172], [214, 166], [222, 172], [218, 181], [210, 180], [211, 173]];
+    sleeve(ctx, pts, 5, C.body);
+  }
+
+  function ears(ctx, perk) {
+    var p = perk ? 6 : 0;
+    // rounded, slightly floppy pig ears
+    ctx.beginPath(); ctx.moveTo(84, 106);
+    ctx.quadraticCurveTo(66, 74, 78, 62 - p);
+    ctx.quadraticCurveTo(102, 62 - p, 120, 88);
+    ctx.closePath();
+    fillStroke(ctx, C.body);
+    ctx.beginPath(); ctx.moveTo(92, 97);
+    ctx.quadraticCurveTo(80, 78, 86, 72 - p);
+    ctx.quadraticCurveTo(100, 72 - p, 110, 89);
+    ctx.closePath();
+    ctx.fillStyle = C.bodyDark; ctx.fill();
+
+    ctx.beginPath(); ctx.moveTo(186, 106);
+    ctx.quadraticCurveTo(204, 74, 192, 62 - p);
+    ctx.quadraticCurveTo(168, 62 - p, 150, 88);
+    ctx.closePath();
+    fillStroke(ctx, C.body);
+    ctx.beginPath(); ctx.moveTo(178, 97);
+    ctx.quadraticCurveTo(190, 78, 184, 72 - p);
+    ctx.quadraticCurveTo(170, 72 - p, 160, 89);
+    ctx.closePath();
+    ctx.fillStyle = C.bodyDark; ctx.fill();
+  }
+
+  function body(ctx) {
+    ellipse(ctx, 135, 148, 70, 66, C.body);
+    // coin slot
+    rrect(ctx, 136, 88, 26, 7, 3.5);
+    ctx.fillStyle = O; ctx.fill();
+  }
+
+  function hair(ctx) {
+    // soft white curls along the top of her head, and a bun with a hairpin
+    var curls = [[96, 100, 9], [106, 91, 10], [119, 86, 10]];
+    for (var i = 0; i < curls.length; i++) ellipse(ctx, curls[i][0], curls[i][1], curls[i][2], curls[i][2], C.hair, 2.5);
+    ellipse(ctx, 112, 70, 15, 14, C.hair, 3);
+    ctx.strokeStyle = C.hairShade; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(112, 70, 7, Math.PI * 0.9, Math.PI * 1.9); ctx.stroke();
+    ctx.beginPath(); ctx.arc(106, 92, 4, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+    // hairpin
+    line(ctx, 3); ctx.beginPath(); ctx.moveTo(98, 62); ctx.lineTo(128, 76); ctx.stroke();
+    ellipse(ctx, 98, 62, 3.5, 3.5, C.brooch, 2);
+  }
+
+  function cardigan(ctx) {
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(135, 148, 70, 66, 0, 0, Math.PI * 2); ctx.clip();
+    // two front panels with a V opening
+    ctx.beginPath(); ctx.moveTo(55, 170); ctx.lineTo(118, 172); ctx.lineTo(131, 222); ctx.lineTo(55, 222); ctx.closePath();
+    fillStroke(ctx, C.cardigan);
+    ctx.beginPath(); ctx.moveTo(215, 170); ctx.lineTo(152, 172); ctx.lineTo(139, 222); ctx.lineTo(215, 222); ctx.closePath();
+    fillStroke(ctx, C.cardigan);
+    // a little knit texture
+    ctx.strokeStyle = C.cardiganDark; ctx.lineWidth = 2;
+    [[80, 192], [94, 204], [176, 194], [190, 206]].forEach(function (k) {
+      ctx.beginPath(); ctx.moveTo(k[0] - 4, k[1] - 3); ctx.lineTo(k[0], k[1] + 2); ctx.lineTo(k[0] + 4, k[1] - 3); ctx.stroke();
+    });
+    ctx.restore();
+    // re-stroke the body outline over the cardigan
+    ctx.beginPath(); ctx.ellipse(135, 148, 70, 66, 0, 0, Math.PI * 2); line(ctx, 3); ctx.stroke();
+    // buttons
+    ellipse(ctx, 150, 200, 3.5, 3.5, C.cardiganDark, 2);
+    ellipse(ctx, 147, 212, 3.5, 3.5, C.cardiganDark, 2);
+    // flower brooch
+    for (var i = 0; i < 5; i++) {
+      var a = (i / 5) * Math.PI * 2;
+      ellipse(ctx, 100 + Math.cos(a) * 5, 186 + Math.sin(a) * 5, 4, 4, C.brooch, 1.8);
+    }
+    ellipse(ctx, 100, 186, 3, 3, C.broochMid, 1.8);
+  }
+
+  function pearls(ctx) {
+    for (var x = 115; x <= 156; x += 6.8) {
+      var t = (x - 135) / 21;
+      ellipse(ctx, x, 192 + 6 * (1 - t * t), 3.4, 3.4, C.pearl, 1.8);
+    }
+  }
+
+  function lashes(ctx, x, y, side) {
+    // eyelashes on the upper outer corner
+    // side = -1 for the eye on the viewer's left, +1 for the right
+    line(ctx, 2.5);
+    ctx.beginPath(); ctx.moveTo(x + side * 6, y - 7); ctx.lineTo(x + side * 11, y - 12); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + side * 8, y - 3); ctx.lineTo(x + side * 14, y - 6); ctx.stroke();
+    smileLines(ctx, x, y, side);
+  }
+
+  function smileLines(ctx, x, y, side) {
+    // gentle smile lines at the lower outer corner of each eye
+    // side = -1 for the eye on the viewer's left, +1 for the right
+    ctx.strokeStyle = C.brow; ctx.lineWidth = 2; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(x + side * 8, y + 2, 7, side < 0 ? Math.PI * 0.75 : Math.PI * 0.05, side < 0 ? Math.PI * 0.95 : Math.PI * 0.25); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x + side * 8, y + 2, 11, side < 0 ? Math.PI * 0.72 : Math.PI * 0.08, side < 0 ? Math.PI * 0.92 : Math.PI * 0.28); ctx.stroke();
+  }
+
+  function eyes(ctx, mode, dx, dy) {
+    dx = dx || 0; dy = dy || 0;
+    var xs = [113, 157];
+    for (var i = 0; i < 2; i++) {
+      var x = xs[i], y = 132, side = i === 0 ? -1 : 1;
+      if (mode === "blink") {
+        line(ctx, 3.5);
+        ctx.beginPath(); ctx.moveTo(x - 8, y + 1); ctx.quadraticCurveTo(x, y + 5, x + 8, y + 1); ctx.stroke();
+        lashes(ctx, x, y, side);
+      } else if (mode === "happy") {
+        ctx.beginPath();
+        ctx.arc(x, y + 5, 9, Math.PI * 1.12, Math.PI * 1.88);
+        line(ctx, 3.5); ctx.stroke();
+        lashes(ctx, x, y + 2, side);
+      } else {
+        ctx.beginPath(); ctx.ellipse(x + dx, y + dy, 7.5, 9, 0, 0, Math.PI * 2);
+        ctx.fillStyle = C.eye; ctx.fill();
+        ctx.beginPath(); ctx.arc(x + dx - 2.5, y + dy - 3.5, 3, 0, Math.PI * 2);
+        ctx.fillStyle = C.shine; ctx.fill();
+        ctx.beginPath(); ctx.arc(x + dx + 3, y + dy + 4, 1.7, 0, Math.PI * 2);
+        ctx.fill();
+        lashes(ctx, x, y, side);
+      }
+    }
+  }
+
+  function brows(ctx, mode) {
+    line(ctx, 4); ctx.strokeStyle = C.brow;
+    if (mode === "focused") {
+      ctx.beginPath(); ctx.moveTo(105, 112); ctx.quadraticCurveTo(113, 113, 121, 116); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(165, 112); ctx.quadraticCurveTo(157, 113, 149, 116); ctx.stroke();
+    } else if (mode === "flat") {
+      ctx.beginPath(); ctx.moveTo(105, 114); ctx.lineTo(121, 113); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(149, 110); ctx.quadraticCurveTo(157, 105, 165, 109); ctx.stroke();
+    } else if (mode === "up") {
+      ctx.beginPath(); ctx.moveTo(105, 109); ctx.quadraticCurveTo(113, 103, 121, 107); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(149, 107); ctx.quadraticCurveTo(157, 103, 165, 109); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(106, 112); ctx.quadraticCurveTo(113, 108, 120, 111); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(150, 111); ctx.quadraticCurveTo(157, 108, 164, 112); ctx.stroke();
+    }
+  }
+
+  function snout(ctx) {
+    ellipse(ctx, 95, 158, 11, 6.5, C.blush, 0);
+    ellipse(ctx, 175, 158, 11, 6.5, C.blush, 0);
+    ellipse(ctx, 135, 158, 18, 12.5, C.snout);
+    ellipse(ctx, 128, 158, 3, 4.5, O, 0);
+    ellipse(ctx, 142, 158, 3, 4.5, O, 0);
+  }
+
+  function mouth(ctx, mode) {
+    line(ctx, 3);
+    if (mode === "pout") {
+      ctx.beginPath(); ctx.moveTo(129, 182); ctx.quadraticCurveTo(135, 178, 141, 182); ctx.stroke();
+    } else if (mode === "tongue") {
+      ctx.beginPath(); ctx.moveTo(128, 178); ctx.quadraticCurveTo(135, 184, 142, 178); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(137, 181); ctx.quadraticCurveTo(141, 189, 145, 181);
+      fillStroke(ctx, C.tongue, 2.5);
+    } else if (mode === "big") {
+      ctx.beginPath();
+      ctx.moveTo(125, 177);
+      ctx.quadraticCurveTo(135, 194, 145, 177);
+      ctx.closePath();
+      fillStroke(ctx, C.mouth);
+      ctx.save(); ctx.clip();
+      ellipse(ctx, 135, 189, 7, 5, C.tongue, 0);
+      ctx.restore();
+    } else {
+      ctx.beginPath(); ctx.moveTo(126, 178); ctx.quadraticCurveTo(135, 187, 144, 178); ctx.stroke();
+    }
+  }
+
+  function calculator(ctx, digits) {
+    ctx.save();
+    ctx.translate(172, 198);
+    ctx.rotate(-0.12);
+    // paper tape curling out the top
+    sleeve(ctx, [[-6, -36], [-8, -58], [-2, -74], [12, -78], [18, -68], [12, -62]], 14, C.tape);
+    line(ctx, 2); ctx.strokeStyle = C.ink;
+    ctx.beginPath(); ctx.moveTo(-11, -46); ctx.lineTo(-3, -46); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-11, -53); ctx.lineTo(-5, -53); ctx.stroke();
+    // body
+    rrect(ctx, -28, -36, 56, 72, 9);
+    fillStroke(ctx, C.calc);
+    // screen
+    rrect(ctx, -20, -28, 40, 16, 4);
+    fillStroke(ctx, C.calcScreen, 2.5);
+    ctx.fillStyle = O;
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.fillText(digits || "300", 15, -19.5);
+    // keys
+    for (var r = 0; r < 3; r++) {
+      for (var c = 0; c < 3; c++) {
+        rrect(ctx, -20 + c * 14, -4 + r * 12, 11, 9, 2.5);
+        fillStroke(ctx, r === 2 && c === 2 ? C.calcKeyHot : C.calcKey, 2);
+      }
+    }
+    ctx.restore();
+  }
+
+  function receipt(ctx) {
+    ctx.save();
+    ctx.translate(222, 98);
+    ctx.rotate(0.08);
+    ctx.beginPath();
+    ctx.moveTo(-14, 0); ctx.lineTo(14, 0); ctx.lineTo(14, 74);
+    for (var i = 0; i < 4; i++) { ctx.lineTo(10.5 - i * 7, 79); ctx.lineTo(7 - i * 7, 74); }
+    ctx.closePath();
+    fillStroke(ctx, C.tape);
+    line(ctx, 2); ctx.strokeStyle = C.ink;
+    var ys = [14, 22, 30];
+    for (var j = 0; j < ys.length; j++) {
+      ctx.beginPath(); ctx.moveTo(-8, ys[j]); ctx.lineTo(j === 1 ? 2 : 8, ys[j]); ctx.stroke();
+    }
+    check(ctx, 0, 52, 1.1);
+    ctx.restore();
+  }
+
+  function tapMarks(ctx, x, y) {
+    line(ctx, 2.5);
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 8, y - 3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 1, y + 8); ctx.lineTo(x + 10, y + 8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y + 16); ctx.lineTo(x + 8, y + 19); ctx.stroke();
+  }
+
+  // ---------- the poses ----------
+
+  var SCALE = 1.15; // grows Penny around her feet so she stands as tall as Quill
+  var DIGITS = ["128", "47", "300", "6.5", "1040", "1.75", "525", "300"];
+
+  // time: seconds since start (0 when reduced motion); st: seconds since the last setState
+  function draw(ctx, state, time, st, reduce) {
+    time = time || 0; st = st === undefined ? 10 : st;
+    ctx.save();
+    ctx.translate(135, 240); ctx.scale(SCALE, SCALE); ctx.translate(-135, -240);
+    drawPose(ctx, state, time, st, reduce);
+    ctx.restore();
+  }
+
+  function drawPose(ctx, state, time, st, reduce) {
+    var still = !!reduce;
+    // blink every ~3.8 s (never in reduced motion, never while happy-eyed)
+    var b = time % 3.8;
+    var blinking = !still && b < 0.16;
+    var bob = still ? 0 : Math.sin(time * 2) * 2;               // breathing
+    var hop = 0;
+    if (state === "done" && !still && st < 0.7) hop = -12 * Math.sin((st / 0.7) * Math.PI);
+
+    shadow(ctx);
+
+    // foot tap while waiting
+    var lift = 0;
+    if (state === "waiting") lift = still ? 7 : 7 * Math.abs(Math.sin(time * 5));
+
+    ctx.save();
+    ctx.translate(0, hop);
+    leg(ctx, 100, 0, 0);
+    leg(ctx, 146, lift, state === "waiting" ? -0.026 * lift : 0);
+    if (state === "waiting" && lift < 2.5) tapMarks(ctx, 186, 214);
+
+    ctx.translate(0, bob);
+    tail(ctx);
+    ears(ctx, state === "done");
+    body(ctx);
+    cardigan(ctx);
+    pearls(ctx);
+    hair(ctx);
+    snout(ctx);
+
+    if (state === "idle") {
+      eyes(ctx, blinking ? "blink" : "open"); brows(ctx); mouth(ctx);
+      var sway = still ? 0 : Math.sin(time * 2) * 2;
+      arm(ctx, [[78, 160], [60, 186], [64 - sway, 203]]);
+      arm(ctx, [[192, 160], [210, 186], [206 + sway, 203]]);
+    } else if (state === "waiting") {
+      // eyes drift between Market and Quill (both to her left)
+      var look = still ? -4 : -2.5 - 2 * Math.sin(time * 1.3);
+      eyes(ctx, blinking ? "blink" : "open", look, 0); brows(ctx, "flat"); mouth(ctx, "pout");
+      arm(ctx, [[80, 180], [118, 206], [162, 198]]);
+      arm(ctx, [[190, 180], [152, 208], [108, 198]]);
+    } else if (state === "calculating") {
+      var tap = still ? 0 : Math.max(0, Math.sin(time * 14)) * 5;
+      var digits = still ? "300" : DIGITS[Math.floor(time * 6) % DIGITS.length];
+      eyes(ctx, blinking ? "blink" : "open", 3, 3); brows(ctx, "focused"); mouth(ctx, "tongue");
+      arm(ctx, [[194, 168], [210, 202], [196, 226]]);
+      calculator(ctx, digits);
+      arm(ctx, [[80, 176], [116, 204], [156, 200 + tap]]);
+    } else if (state === "done") {
+      var wave = still ? 0 : Math.sin(time * 5) * 7;
+      eyes(ctx, "happy"); brows(ctx, "up"); mouth(ctx, "big");
+      arm(ctx, [[78, 156], [58 + wave * 0.4, 132], [52 + wave, 108]]);
+      receipt(ctx);
+      arm(ctx, [[192, 156], [212, 128], [220, 102]]);
+    }
+    ctx.restore();
+  }
+
+  // ---------- public API (matches createQuill / createWard) ----------
+
+  function createFinance(canvas, opts) {
+    opts = opts || {};
+    var root = typeof window !== "undefined" ? window : {};
+    var ctx = canvas.getContext("2d");
+    var state = STATES.indexOf(opts.state) >= 0 ? opts.state : "idle";
+    var now = function () { return typeof performance !== "undefined" ? performance.now() : Date.now(); };
+    var stateStart = now();
+    var raf = 0;
+    var reduce = !!(root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    var raff = root.requestAnimationFrame ? root.requestAnimationFrame.bind(root) : function (f) { return setTimeout(function () { f(now()); }, 16); };
+    var caf = root.cancelAnimationFrame ? root.cancelAnimationFrame.bind(root) : clearTimeout;
+
+    function resize() {
+      var dpr = root.devicePixelRatio || 1;
+      var r = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : { width: canvas.width, height: canvas.height };
+      var w = Math.max(1, Math.round(r.width * dpr));
+      var h = Math.max(1, Math.round(r.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    }
+
+    function frame(ts) {
+      resize();
+      var cw = canvas.width, ch = canvas.height;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+      var s = Math.min(cw / W, ch / H);
+      ctx.setTransform(s, 0, 0, s, (cw - W * s) / 2, (ch - H * s) / 2);
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      var t = ts === undefined ? now() : ts;
+      var time = reduce ? 0 : t / 1000;
+      var st = reduce ? 10 : (t - stateStart) / 1000;
+      draw(ctx, state, time, st, reduce);
+      if (!reduce) raf = raff(frame);
+    }
+
+    function start() {
+      caf(raf);
+      raf = raff(frame);
+    }
+
+    var api = {
+      setState: function (next) {
+        if (STATES.indexOf(next) < 0) throw new Error("Unknown Penny state: " + next + ". Use one of: " + STATES.join(", "));
+        if (next !== state) { state = next; stateStart = now(); }
+        start();
+      },
+      getState: function () { return state; },
+      destroy: function () { caf(raf); }
+    };
+    if (reduce && root.addEventListener) root.addEventListener("resize", start);
+    start();
+    return api;
+  }
+
+  createFinance.STATES = STATES.slice();
+  createFinance._draw = draw; // used by the preview sheet
+
+  if (typeof window !== "undefined") window.createFinance = createFinance;
+  if (typeof module !== "undefined" && module.exports) module.exports = { createFinance: createFinance };
+})();
+</script>
+<script>
+function card(parent,factory,name,role,state,withButtons){
+  var d=document.createElement("div");d.className="card";
+  var c=document.createElement("canvas");c.setAttribute("role","img");c.setAttribute("aria-label",name+", "+role);
+  d.append(c);var n=document.createElement("div");n.className="name";n.textContent=name;d.append(n);
+  var r=document.createElement("div");r.className="role";r.textContent=role;d.append(r);
+  parent.append(d);var a=factory(c,{state:state});
+  if(withButtons){var b=document.createElement("div");b.className="btns";d.append(b);
+    withButtons.forEach(function(s){var x=document.createElement("button");x.textContent=s;x.setAttribute("aria-pressed",s===state);
+      x.onclick=function(){a.setState(s);b.querySelectorAll("button").forEach(function(y){y.setAttribute("aria-pressed",y===x)})};b.append(x)});}
+}
+var crew=document.getElementById("crew");
+card(crew,createMarket,"Scout","Customer & Market","idle",createMarket.STATES);
+card(crew,createQuill,"Quill","Legal & Compliance","idle",["idle","researching","flagging","approved"]);
+card(crew,createFinance,"Penny","Finance","idle",createFinance.STATES);
+createMarket.STATES.forEach(function(s){card(document.getElementById("scout"),createMarket,"Scout",s,s)});
+createFinance.STATES.forEach(function(s){card(document.getElementById("penny"),createFinance,"Penny",s,s)});
+</script></body></html>

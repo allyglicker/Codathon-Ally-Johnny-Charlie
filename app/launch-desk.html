@@ -1,0 +1,2138 @@
+<title>Neur Launch Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an office floor. Founder | Ward | Roadmap on top, three specialists below, Ward's review desk under them; folders fly over everything. */
+:root {
+  --bg: #F2EFE9;
+  --panel: #FFFFFF;
+  --ink: #1F1A16;
+  --muted: #6B6158;
+  --line: #DDD5CA;
+  --soft: #F7F4EF;
+  --accent: #4F6D8C;
+  --manila: #E8C57E;
+  --manila-ink: #3A2A1F;
+  --note: #F5E27A;
+  --bad: #B8322A;
+  --warn: #A86A12;
+  --ok: #2F8A4E;
+  --f-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15120F; --panel: #1E1A16; --ink: #EDE6DD; --muted: #A89C90; --line: #352E28; --soft: #26211C;
+    --accent: #8FB0D2; --bad: #F07A6C; --warn: #E3A64A; --ok: #6CCB8C; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15120F; --panel: #1E1A16; --ink: #EDE6DD; --muted: #A89C90; --line: #352E28; --soft: #26211C;
+  --accent: #8FB0D2; --bad: #F07A6C; --warn: #E3A64A; --ok: #6CCB8C; color-scheme: dark;
+}
+html, body { background: var(--bg); color: var(--ink); }
+body {
+  font-family: var(--f-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 36px;
+}
+.page { max-width: 1160px; margin: 0 auto; display: grid; gap: 16px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 14px; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: clamp(28px, 3.6vw, 40px); line-height: 1.05; margin: 0; }
+.sub { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button, select {
+  font: 500 14px var(--f-body); color: var(--ink); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+}
+button:hover, select:hover { border-color: var(--muted); }
+button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--panel); min-width: 88px; }
+button:disabled { opacity: .45; cursor: default; }
+.progress { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+
+/* stage */
+.stage { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 14px; }
+.top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); gap: 14px; align-items: center; }
+.crew { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.slot { min-width: 0; border-radius: 12px; transition: box-shadow .25s; }
+.slot.flash { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); }
+.who { text-align: center; display: grid; gap: 2px; justify-items: center; }
+.who canvas { width: 100%; max-width: 250px; aspect-ratio: 270 / 260; display: block; }
+.name { font-family: var(--f-display); font-size: 19px; font-weight: 600; margin: 0; }
+.role { font-size: 13px; color: var(--muted); margin: 0; }
+.status { font-family: var(--f-mono); font-size: 12px; color: var(--muted); min-height: 1.5em; }
+.status.busy { color: var(--accent); }
+.status.good { color: var(--ok); }
+
+/* placeholder agents */
+.ph { width: 100%; max-width: 250px; aspect-ratio: 270 / 260; display: grid; place-items: center; position: relative; }
+.ph .disc { width: 44%; aspect-ratio: 1; border-radius: 50%; border: 2px dashed var(--muted); display: grid; place-items: center; font: 600 22px var(--f-display); color: var(--muted); background: var(--soft); position: relative; }
+.ph .disc::after { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 3px solid transparent; }
+.ph.busy .disc { color: var(--accent); border-color: var(--accent); }
+.ph.busy .disc::after { border-top-color: var(--accent); border-right-color: var(--accent); animation: spin 1s linear infinite; }
+.ph.waiting .disc { opacity: .55; }
+.ph small { position: absolute; bottom: 8%; font-size: 11.5px; color: var(--muted); font-family: var(--f-mono); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.waits { display: flex; gap: 10px; justify-content: center; font-size: 12.5px; color: var(--muted); }
+.waits span::before { content: "\25A1  "; }
+.waits span.done { color: var(--ok); }
+.waits span.done::before { content: "\2713  "; }
+
+/* founder card */
+.founder { background: var(--soft); border: 1px solid var(--line); padding: 14px; display: grid; gap: 6px; }
+.card-title { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.founder h3 { font-family: var(--f-display); font-size: 19px; font-weight: 600; margin: 0; }
+.founder dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; margin: 0; font-size: 13.5px; }
+.founder dt { color: var(--muted); }
+.founder dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* roadmap page */
+.roadmap { background: var(--soft); border: 1px solid var(--line); padding: 14px; display: grid; gap: 8px; }
+.roadmap ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; counter-reset: s; }
+.roadmap li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 6px; font-size: 13px; line-height: 1.35; counter-increment: s; }
+.roadmap li::before { content: counter(s); font-family: var(--f-mono); color: var(--muted); font-size: 12px; }
+.roadmap li b { font-weight: 600; display: block; }
+.roadmap li .fill { display: block; height: 7px; border-radius: 4px; background: var(--line); margin-top: 4px; width: 80%; }
+.roadmap li.on .fill { display: none; }
+.roadmap li .txt { display: none; color: var(--ink); }
+.roadmap li.on .txt { display: block; }
+.roadmap li.on { animation: land .4s ease-out; }
+.est { font-family: var(--f-mono); font-size: 11px; color: var(--warn); border: 1px dashed currentColor; border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+.verdict { font-family: var(--f-display); font-size: 16px; font-weight: 600; color: var(--ok); }
+@keyframes land { from { transform: translateX(-6px); opacity: .2; } to { transform: none; opacity: 1; } }
+
+/* review desk */
+.desk { border-top: 1px dashed var(--line); padding-top: 14px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 16px; }
+.desk h2 { font-family: var(--f-mono); font-size: 11.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.trays { display: grid; gap: 8px; }
+.tray { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 13px; }
+.tray > span:first-child { color: var(--muted); }
+.tray .chips { display: flex; flex-wrap: wrap; gap: 4px; min-height: 26px; align-items: center; }
+.tray .chips:empty::before { content: "waiting"; color: var(--muted); font-style: italic; font-size: 12.5px; }
+.chip { font-family: var(--f-mono); font-size: 12px; padding: 2px 7px; border-radius: 5px; background: var(--manila); color: var(--manila-ink); border: 1.5px solid var(--manila); }
+.chip.e { border-style: dashed; border-color: var(--manila-ink); }
+.chip.hot { outline: 2px solid var(--bad); outline-offset: 1px; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.checks li { display: grid; grid-template-columns: 22px 104px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 13.5px; }
+.mark { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font: 600 12px var(--f-mono); color: var(--panel); }
+.checks li[data-s="pass"] .mark { background: var(--ok); border-color: var(--ok); }
+.checks li[data-s="pass"] .mark::after { content: "\2713"; }
+.checks li[data-s="fail"] .mark { background: var(--bad); border-color: var(--bad); }
+.checks li[data-s="fail"] .mark::after { content: "\2715"; }
+.checks li[data-s="warn"] .mark { background: var(--warn); border-color: var(--warn); }
+.checks li[data-s="warn"] .mark::after { content: "!"; }
+.checks .d { color: var(--muted); min-width: 0; }
+.checks li[data-s="fail"] .d { color: var(--bad); }
+.conflict { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.conflict .wire { flex: 0 0 34px; height: 3px; background: var(--bad); transform-origin: left; animation: wire .5s ease-out; }
+@keyframes wire { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.followups { font-family: var(--f-mono); font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+/* flying folders */
+.fly { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: 14px; }
+.folder { position: absolute; left: 0; top: 0; width: 150px; background: var(--manila); color: var(--manila-ink); border: 2px solid var(--manila-ink); border-radius: 4px 8px 8px 8px; padding: 6px 8px 7px; box-shadow: 0 6px 16px rgba(0,0,0,.18); will-change: transform; }
+.folder::before { content: ""; position: absolute; left: -2px; top: -11px; width: 56px; height: 11px; background: var(--manila); border: 2px solid var(--manila-ink); border-bottom: 0; border-radius: 4px 4px 0 0; }
+.folder .lbl { font: 600 11px var(--f-mono); letter-spacing: .04em; text-transform: uppercase; display: block; }
+.folder .tab { font: 500 12.5px var(--f-body); display: block; line-height: 1.3; }
+.folder.est .tab { border-top: 1.5px dashed var(--manila-ink); padding-top: 3px; margin-top: 3px; }
+.folder.note { background: var(--note); width: 132px; border-radius: 2px; transform: rotate(-2deg); }
+.folder.note::before { display: none; }
+.folder.final { background: #FBF6EC; border-color: #2F8A4E; }
+.folder.final::before { background: #FBF6EC; border-color: #2F8A4E; }
+
+/* caption */
+.caption { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; min-height: 104px; }
+.cap-who { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.cap-title { font-family: var(--f-display); font-size: 20px; font-weight: 600; margin: 3px 0 2px; }
+.cap-body { margin: 0; max-width: 80ch; }
+.foot { font-size: 13px; color: var(--muted); margin: 0; max-width: 92ch; }
+.foot code { font-family: var(--f-mono); font-size: 12.5px; background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+
+@media (max-width: 860px) {
+  .top { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "ward ward" "founder roadmap"; }
+  #n-ward { grid-area: ward; } #n-founder { grid-area: founder; } #n-roadmap { grid-area: roadmap; }
+  .desk { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .top { grid-template-columns: minmax(0, 1fr); grid-template-areas: "ward" "founder" "roadmap"; }
+  .crew { gap: 6px; }
+  .name { font-size: 15px; } .role { font-size: 11.5px; }
+  .waits { flex-direction: column; gap: 0; align-items: center; }
+  .checks li { grid-template-columns: 22px minmax(0, 1fr); }
+  .checks li .d { grid-column: 2; }
+  .folder { width: 124px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ph.busy .disc::after, .conflict .wire, .roadmap li.on { animation: none; }
+}
+</style>
+
+<div class="page">
+  <header>
+    <div>
+      <p class="eyebrow">Neur · AWS code-a-thon demo · sample data</p>
+      <h1>Neur Launch Desk</h1>
+      <p class="sub">Ward, the manager agent, sends a first-time founder's idea to three specialists, checks their answers against each other, and hands back one launch roadmap.</p>
+    </div>
+    <div style="display:grid; gap:8px; justify-items:end">
+      <div class="controls">
+        <button id="play" class="primary">Pause</button>
+        <button id="step">Step</button>
+        <button id="reset">Restart</button>
+        <label for="speed" style="position:absolute;left:-9999px">Speed</label>
+        <select id="speed">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="1.5">1.5×</option>
+          <option value="2">2×</option>
+        </select>
+      </div>
+      <div class="progress" style="width:100%"><i id="bar"></i></div>
+    </div>
+  </header>
+
+  <section class="stage" id="stage" aria-label="Neur agents at work">
+    <div class="top">
+      <div class="slot founder" id="n-founder">
+        <p class="card-title">Founder profile</p>
+        <h3>Homemade cookies</h3>
+        <dl>
+          <dt>Where</dt><dd>Milledgeville, GA</dd>
+          <dt>Budget</dt><dd>$1,500</dd>
+          <dt>Time</dt><dd>10 hours a week</dd>
+          <dt>Opening</dt><dd>Within 3 months</dd>
+          <dt>Experience</dt><dd>5 years baking, no business</dd>
+        </dl>
+      </div>
+
+      <div class="slot who" id="n-ward">
+        <canvas id="c-ward" role="img" aria-label="Ward, the manager agent, at his desk"></canvas>
+        <p class="name">Ward</p>
+        <p class="role">Manager</p>
+        <div class="status" id="st-ward">waiting for a founder</div>
+      </div>
+
+      <div class="slot roadmap" id="n-roadmap">
+        <p class="card-title">Launch roadmap</p>
+        <ol id="roadmap">
+          <li><span><b>Your business in one sentence</b><span class="fill"></span><span class="txt">Homemade cookies for Milledgeville shoppers at markets, events and in-state online orders.</span></span></li>
+          <li><span><b>Will it sell?</b><span class="fill"></span><span class="txt">Start at $5 a cookie. About 120 customers a month <span class="est">estimate</span></span></span></li>
+          <li><span><b>The money</b><span class="fill"></span><span class="txt">$1,040 to start. Break-even 162 cookies a month <span class="est">estimate</span></span></span></li>
+          <li><span><b>Getting legal</b><span class="fill"></span><span class="txt">Cottage food license, city business license, free EIN and sales tax ID.</span></span></li>
+          <li><span><b>Watch out for</b><span class="fill"></span><span class="txt">10 hours a week caps you near 200 cookies a month. No coffee shop sales.</span></span></li>
+          <li><span><b>Your first 5 steps</b><span class="fill"></span><span class="txt">Zoning call, food handler course, license application, labels, first market.</span></span></li>
+          <li><span><b>Should you go for it?</b><span class="fill"></span><span class="txt"><span class="verdict">Launch with changes.</span></span></span></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="crew">
+      <div class="slot who" id="n-market">
+        <canvas id="c-market" role="img" aria-label="Scout, the Customer &amp; Market platypus"></canvas>
+        <p class="name">Scout</p>
+        <p class="role">Customer &amp; Market</p>
+        <div class="status" id="st-market">idle</div>
+      </div>
+      <div class="slot who" id="n-legal">
+        <canvas id="c-quill" role="img" aria-label="Quill, the legal and compliance owl"></canvas>
+        <p class="name">Quill</p>
+        <p class="role">Legal &amp; Compliance</p>
+        <div class="status" id="st-legal">idle</div>
+      </div>
+      <div class="slot who" id="n-finance">
+        <canvas id="c-finance" role="img" aria-label="Penny, the Finance piggy bank"></canvas>
+        <p class="name">Penny</p>
+        <p class="role">Finance</p>
+        <div class="status" id="st-finance">idle</div>
+        <div class="waits"><span id="w-market">Market</span><span id="w-legal">Legal</span></div>
+      </div>
+    </div>
+
+    <div class="desk" id="desk">
+      <div>
+        <h2>Ward's desk: handoffs in</h2>
+        <div class="trays">
+          <div class="tray"><span>Market</span><div class="chips" id="t-market"></div></div>
+          <div class="tray"><span>Legal</span><div class="chips" id="t-legal"></div></div>
+          <div class="tray"><span>Finance</span><div class="chips" id="t-finance"></div></div>
+        </div>
+        <div class="followups" id="fu">Follow-ups used: 0 of 1</div>
+      </div>
+      <div>
+        <h2>Ward's checks</h2>
+        <ul class="checks" id="checks">
+          <li data-k="budget" data-s="pending"><span class="mark"></span><span>Budget</span><span class="d">Startup cost vs. $1,500</span></li>
+          <li data-k="price" data-s="pending"><span class="mark"></span><span>Price vs. cost</span><span class="d">Price comfortably above cost</span></li>
+          <li data-k="legal" data-s="pending"><span class="mark"></span><span>Legal blockers</span><span class="d">Anything in Legal's risks that stops the plan</span></li>
+          <li data-k="capacity" data-s="pending"><span class="mark"></span><span>Capacity</span><span class="d">Break-even vs. her hours and the market</span></li>
+          <li data-k="runway" data-s="pending"><span class="mark"></span><span>Runway</span><span class="d">Money lasts 6+ months</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="fly" id="fly" aria-hidden="true"></div>
+  </section>
+
+  <section class="caption" aria-live="polite">
+    <div class="cap-who" id="cap-who">Ready</div>
+    <p class="cap-title" id="cap-title">A first-time founder wants to sell cookies</p>
+    <p class="cap-body" id="cap-body">The run starts when her profile reaches Ward.</p>
+  </section>
+
+  <p class="foot">This run is scripted with sample data. In the live app, each step should fire from a real event (<code>market.done</code>, <code>legal.done</code>, <code>finance.done</code>, <code>manager.conflict</code>, <code>manager.followup</code>, <code>manager.roadmap</code>), and the folder tabs read straight from each agent's <code>numbers</code>. Dashed tabs are estimates.</p>
+</div>
+
+<script>
+/* quill.js: Quill, Nuer's Legal & Compliance agent, drawn on a <canvas>.
+   No dependencies. Plain JavaScript.
+
+   Usage:
+     const quill = createQuill(document.getElementById("quill"));
+     quill.setState("researching");   // idle | researching | flagging | approved
+     quill.getState();
+     quill.destroy();                 // stops the animation loop
+
+   Event mapping (from the Legal handoff, B.4):
+     legal.received -> "researching"
+     legal.search   -> stay "researching"
+     legal.blocker  -> "flagging"
+     legal.done     -> "approved" (or stay "flagging" if a blocker was raised)
+*/
+(function (root) {
+  "use strict";
+
+  // Character palette. Fixed on purpose: Quill looks the same on light and dark pages.
+  var C = {
+    line: "#3A2A1F",
+    feather: "#8A5A3B",
+    featherDark: "#6A432C",
+    face: "#F3E3C7",
+    belly: "#EAD3AC",
+    vest: "#4F6D8C",
+    vestDark: "#3C5671",
+    brass: "#C9A04A",
+    beak: "#D89A3A",
+    iris: "#E8B23A",
+    pupil: "#1E1612",
+    glass: "#2F2A26",
+    seal: "#B8322A",
+    check: "#2F8A4E",
+    pole: "#5B4636",
+    paper: "#FBF6EC",
+    shadow: "rgba(20, 14, 10, 0.16)"
+  };
+  var W = 270, H = 260;            // design units; scaled to fit any canvas (owl drawn in a 220-wide box, offset 25)
+  var STATES = ["idle", "researching", "flagging", "approved"];
+  // Universal Neur states (integration handoff, Part 5) map onto Quill's own poses.
+  var ALIAS = { waiting: "idle", working: "researching", done: "approved" };
+  function canon(name) { return ALIAS[name] || name; }
+
+  function createQuill(canvas, opts) {
+    opts = opts || {};
+    var ctx = canvas.getContext("2d");
+    var state = STATES.indexOf(canon(opts.state)) >= 0 ? canon(opts.state) : "idle";
+    var stateStart = performance.now();
+    var raf = 0;
+    var reduce = !!(root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+    function resize() {
+      var dpr = root.devicePixelRatio || 1;
+      var r = canvas.getBoundingClientRect();
+      var w = Math.max(1, Math.round(r.width * dpr));
+      var h = Math.max(1, Math.round(r.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    }
+
+    // ---------- drawing helpers ----------
+    function ell(x, y, rx, ry, fill, rot, noStroke) {
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx, ry, rot || 0, 0, Math.PI * 2);
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (!noStroke) ctx.stroke();
+    }
+    function poly(pts, fill) {
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.closePath();
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      ctx.stroke();
+    }
+    function line(x1, y1, x2, y2, color, width) {
+      ctx.save();
+      ctx.strokeStyle = color || C.line;
+      ctx.lineWidth = width || 3;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.restore();
+    }
+    // Wing from a shoulder pivot. a = how far it swings outward (0 = hanging down).
+    // side = +1 for Quill's left (viewer's right), -1 for the other wing.
+    function wingTip(px, py, a, side, len) {
+      return [px + side * Math.sin(a) * len, py + Math.cos(a) * len];
+    }
+    function wing(px, py, a, side) {
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(-side * a);
+      ell(0, 30, 15, 36, C.feather);
+      // three feather lines
+      ctx.save();
+      ctx.strokeStyle = C.featherDark; ctx.lineWidth = 2;
+      for (var i = -1; i <= 1; i++) {
+        ctx.beginPath(); ctx.moveTo(i * 6, 44); ctx.lineTo(i * 5, 60); ctx.stroke();
+      }
+      ctx.restore();
+      ctx.restore();
+    }
+
+    // ---------- props ----------
+    function magnifier(tx, ty, sweep) {
+      var lx = tx - 6, ly = ty - 18;
+      line(tx, ty + 4, lx, ly + 12, C.pole, 5);
+      ctx.save();
+      ctx.lineWidth = 4; ctx.strokeStyle = C.glass;
+      ctx.beginPath(); ctx.arc(lx, ly, 14, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(190, 220, 240, 0.45)"; ctx.fill(); ctx.stroke();
+      // glint
+      ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(lx, ly, 8, Math.PI * 1.1 + sweep * 0.3, Math.PI * 1.45 + sweep * 0.3); ctx.stroke();
+      ctx.restore();
+    }
+    function flag(tx, ty, time) {
+      var topY = ty - 74;
+      line(tx, ty + 6, tx, topY, C.pole, 4);
+      ctx.save();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = C.line; ctx.fillStyle = C.seal;
+      ctx.beginPath();
+      var fw = 46, fh = 28, n = 10;
+      ctx.moveTo(tx, topY);
+      for (var i = 0; i <= n; i++) {
+        var x = tx - (fw * i) / n;
+        ctx.lineTo(x, topY + Math.sin(time * 6 + i * 0.7) * 3 * (i / n));
+      }
+      for (var j = n; j >= 0; j--) {
+        var x2 = tx - (fw * j) / n;
+        ctx.lineTo(x2, topY + fh + Math.sin(time * 6 + j * 0.7) * 3 * (j / n));
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      // "!" mark
+      ctx.fillStyle = C.paper;
+      ctx.fillRect(tx - 25, topY + 6, 5, 11);
+      ctx.beginPath(); ctx.arc(tx - 22.5, topY + 22, 2.8, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      line(tx, topY - 2, tx, topY - 2, C.brass, 6);
+    }
+    function paperSheet(showMarks, sealPop) {
+      ctx.save();
+      ctx.translate(178, 222);
+      ctx.rotate(-0.06);
+      ctx.lineWidth = 2.5; ctx.strokeStyle = C.line;
+      ctx.fillStyle = C.paper;
+      ctx.beginPath(); ctx.rect(-26, -18, 52, 34); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = "rgba(58,42,31,0.35)"; ctx.lineWidth = 1.5;
+      for (var i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-20, -10 + i * 7); ctx.lineTo(4, -10 + i * 7); ctx.stroke(); }
+      if (showMarks) {
+        // green check
+        ctx.strokeStyle = C.check; ctx.lineWidth = 3.5; ctx.lineCap = "round"; ctx.lineJoin = "round";
+        ctx.beginPath(); ctx.moveTo(-19, 8); ctx.lineTo(-13, 13); ctx.lineTo(-3, 1); ctx.stroke();
+        // red wax seal
+        var r = 9 * sealPop;
+        ctx.fillStyle = C.seal; ctx.strokeStyle = C.line; ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var k = 0; k < 14; k++) {
+          var ang = (k / 14) * Math.PI * 2, rr = r * (k % 2 ? 0.86 : 1);
+          ctx.lineTo(13 + Math.cos(ang) * rr, 5 + Math.sin(ang) * rr);
+        }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.beginPath(); ctx.arc(13, 5, r * 0.45, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+    function stamp(tx, ty) {
+      line(tx, ty - 2, tx, ty + 20, C.pole, 5);
+      ctx.save();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = C.line;
+      ell(tx, ty - 4, 6, 6, C.seal);
+      ctx.fillStyle = C.brass;
+      ctx.beginPath(); ctx.rect(tx - 11, ty + 20, 22, 8); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+
+    // ---------- the owl ----------
+    function draw(now) {
+      resize();
+      var cw = canvas.width, ch = canvas.height;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+      var s = Math.min(cw / W, ch / H);
+      ctx.setTransform(s, 0, 0, s, (cw - W * s) / 2 + 25 * s, (ch - H * s) / 2);
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      ctx.strokeStyle = C.line; ctx.lineWidth = 3;
+
+      var time = reduce ? 0 : now / 1000;
+      var st = reduce ? 10 : (now - stateStart) / 1000;
+      var bob = reduce ? 0 : Math.sin(time * 2) * 2.5;
+
+      // ground shadow and feet (don't bob)
+      ell(110, 240, 58, 8, C.shadow, 0, true);
+      ctx.save(); ctx.lineWidth = 2;
+      [[92, 232], [128, 232]].forEach(function (f) {
+        for (var i = -1; i <= 1; i++) ell(f[0] + i * 6, f[1], 4.5, 6, C.beak);
+      });
+      ctx.restore();
+
+      if (state === "approved") paperSheet(st > 0.75, Math.min(1, Math.max(0, (st - 0.75) * 5)));
+
+      ctx.save();
+      ctx.translate(0, bob);
+
+      // ear tufts (behind head)
+      var lift = state === "flagging" ? 9 + Math.sin(time * 9) * 1.5 : state === "researching" ? 3 : 0;
+      poly([[68, 50], [58, 16 - lift], [86, 38]], C.featherDark);
+      poly([[152, 50], [162, 16 - lift], [134, 38]], C.featherDark);
+
+      // body + vest + belly
+      ell(110, 152, 64, 72, C.feather);
+      ctx.save();
+      ctx.beginPath(); ctx.ellipse(110, 152, 64, 72, 0, 0, Math.PI * 2); ctx.clip();
+      ctx.fillStyle = C.vest; ctx.fillRect(40, 116, 140, 120);
+      ctx.restore();
+      ell(110, 166, 34, 50, C.belly);
+      // belly feather marks
+      ctx.save(); ctx.strokeStyle = "rgba(106,67,44,0.5)"; ctx.lineWidth = 2;
+      [[100, 150], [118, 156], [104, 172], [120, 180], [108, 194]].forEach(function (p) {
+        ctx.beginPath(); ctx.arc(p[0], p[1], 4, 0.2, Math.PI - 0.2); ctx.stroke();
+      });
+      ctx.restore();
+      ell(110, 152, 64, 72, null);           // re-stroke body outline over vest
+      ell(62, 150, 4, 4, C.brass);           // buttons
+      ell(64, 172, 4, 4, C.brass);
+      // vest pocket with a quill pen
+      line(154, 162, 164, 128, C.pole, 2.5);
+      ell(164, 134, 4, 11, C.paper, 0.3);
+      ctx.save(); ctx.fillStyle = C.vestDark;
+      ctx.beginPath(); ctx.rect(146, 156, 20, 14); ctx.fill(); ctx.stroke(); ctx.restore();
+
+      // wings and props
+      var pivL = [62, 124], pivR = [158, 124];   // viewer's left / right shoulders
+      var aL = 0.2, aR = 0.2;
+      if (state === "idle") { aL = 0.18 + Math.sin(time * 2) * 0.03; aR = aL; }
+      if (state === "researching") aR = 2.15 + Math.sin(st * 2.2) * 0.28;
+      if (state === "flagging") aL = 2.45 + Math.sin(time * 6) * 0.05;
+      if (state === "approved") {
+        var p = (st % 1.6) / 1.6;                       // stamp cycle
+        var press = p < 0.45 ? p / 0.45 : p < 0.6 ? 1 : 1 - (p - 0.6) / 0.4;
+        aR = 1.25 - press * 0.75;
+      }
+      wing(pivL[0], pivL[1], aL, -1);
+      wing(pivR[0], pivR[1], aR, 1);
+
+      // head (drawn after wings so raised wings tuck behind it)
+      ell(110, 82, 60, 52, C.feather);
+      ell(88, 86, 25, 24, C.face);
+      ell(132, 86, 25, 24, C.face);
+
+      // eyes
+      var lookX = 0, lookY = 0, lid = 0;
+      if (state === "researching") { lookX = Math.sin(st * 2.2) * 4.5; lookY = -1; }
+      if (state === "flagging") { lookY = -3; lookX = -2; }
+      if (state === "approved") lid = 0.38;
+      if (state === "idle" && !reduce) {
+        var b = time % 3.6;
+        if (b < 0.16) lid = 1 - Math.abs(b - 0.08) / 0.08;
+      }
+      [88, 132].forEach(function (ex) {
+        var ey = 86;
+        ell(ex, ey, 13, 13, C.iris);
+        ctx.save();
+        ctx.beginPath(); ctx.arc(ex, ey, 13, 0, Math.PI * 2); ctx.clip();
+        ell(ex + lookX, ey + lookY, 6.5, 6.5, C.pupil, 0, true);
+        ell(ex + lookX - 2.5, ey + lookY - 3, 2.2, 2.2, "#FFFFFF", 0, true);
+        if (lid > 0) { ctx.fillStyle = C.feather; ctx.fillRect(ex - 14, ey - 14, 28, 28 * lid); }
+        ctx.restore();
+        ctx.save(); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(ex, ey, 13, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      });
+
+      // glasses
+      ctx.save();
+      ctx.strokeStyle = C.glass; ctx.lineWidth = 2.6;
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      [88, 132].forEach(function (ex) { ctx.beginPath(); ctx.arc(ex, 86, 17, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+      ctx.beginPath(); ctx.moveTo(105, 84); ctx.quadraticCurveTo(110, 79, 115, 84); ctx.stroke();
+      ctx.restore();
+
+      // brows
+      var bw = 3.5, bc = C.featherDark;
+      if (state === "flagging") {               // worried: inner ends up
+        line(74, 66, 98, 58, bc, bw); line(122, 58, 146, 66, bc, bw);
+      } else if (state === "researching") {     // one brow raised, focused
+        line(74, 58, 98, 60, bc, bw); line(122, 64, 146, 64, bc, bw);
+      } else if (state === "approved") {        // relaxed arcs
+        ctx.save(); ctx.strokeStyle = bc; ctx.lineWidth = bw;
+        ctx.beginPath(); ctx.arc(86, 70, 13, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+        ctx.beginPath(); ctx.arc(134, 70, 13, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+        ctx.restore();
+      } else {
+        line(76, 63, 98, 63, bc, bw); line(122, 63, 144, 63, bc, bw);
+      }
+
+      // beak
+      poly([[103, 100], [117, 100], [110, 115]], C.beak);
+
+      // props in the raised wing
+      if (state === "researching") {
+        var tR = wingTip(pivR[0], pivR[1], aR, 1, 56);
+        magnifier(tR[0], tR[1], Math.sin(st * 2.2));
+      }
+      if (state === "flagging") {
+        var tL = wingTip(pivL[0], pivL[1], aL, -1, 56);
+        flag(tL[0], tL[1], time);
+      }
+      if (state === "approved") {
+        var tS = wingTip(pivR[0], pivR[1], aR, 1, 58);
+        ctx.restore();                     // stamp lives in ground space so it lands on the paper
+        stamp(tS[0], tS[1] + bob);
+        ctx.save();
+      }
+      ctx.restore();
+
+      if (!reduce) raf = root.requestAnimationFrame(draw);
+    }
+
+    function start() {
+      root.cancelAnimationFrame(raf);
+      raf = root.requestAnimationFrame(draw);
+    }
+
+    var api = {
+      setState: function (next) {
+        var asked = next; next = canon(next);
+        if (STATES.indexOf(next) < 0) throw new Error("Unknown Quill state: " + asked + ". Use one of: " + STATES.concat(Object.keys(ALIAS)).join(", "));
+        if (next !== state) { state = next; stateStart = performance.now(); }
+        start();
+      },
+      getState: function () { return state; },
+      destroy: function () { root.cancelAnimationFrame(raf); }
+    };
+    if (reduce && root.addEventListener) root.addEventListener("resize", start);
+    start();
+    return api;
+  }
+
+  root.createQuill = createQuill;
+  if (typeof module !== "undefined" && module.exports) module.exports = { createQuill: createQuill };
+})(typeof window !== "undefined" ? window : this);
+
+</script>
+<script>
+/* ward.js: Ward, Nuer's Manager (hub) agent, drawn on a <canvas>, seated behind his desk.
+   No dependencies. Plain JavaScript. Same flat style and line weight as quill.js.
+
+   Usage:
+     const ward = createWard(document.getElementById("ward"));
+     ward.setState("reviewing");   // idle | delegating | reviewing | alert | approving
+     ward.getState();
+     ward.destroy();
+
+   Suggested event mapping:
+     founder profile arrives / handoffs return -> "reviewing"
+     sending work to a specialist              -> "delegating"
+     manager.conflict                          -> "alert"
+     manager.roadmap delivered                 -> "approving"
+   Give the canvas a 270:260 shape (CSS aspect-ratio: 270 / 260).
+*/
+(function (root) {
+  "use strict";
+
+  var C = {
+    line: "#3A2A1F",
+    skin: "#EFC9AE",
+    skinShade: "#C99A7E",
+    hair: "#D3CFC9",
+    hairDark: "#9E9890",
+    beard: "#C4BEB6",
+    glasses: "#26201C",
+    blazer: "#6F706B",
+    blazerDark: "#575852",
+    fleck: "#8C8D86",
+    shirt: "#9DB39A",
+    tie: "#5E6F82",
+    tieStripe: "#AEBBC9",
+    desk: "#A27A55",
+    deskTop: "#7E5B3E",
+    brass: "#C9A04A",
+    folder: "#E8C57E",
+    pen: "#B8322A",
+    paper: "#FBF6EC",
+    check: "#2F8A4E"
+  };
+  var W = 270, H = 260;
+  var STATES = ["idle", "delegating", "reviewing", "alert", "approving"];
+  // Universal Neur states (integration handoff, Part 5) map onto Ward's own poses.
+  var ALIAS = { waiting: "idle", working: "reviewing", flagging: "alert", done: "approving" };
+  function canon(name) { return ALIAS[name] || name; }
+
+  // fixed tweed fleck pattern so it doesn't shimmer between frames
+  var FLECKS = [];
+  (function () {
+    var seed = 7;
+    function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    for (var i = 0; i < 70; i++) FLECKS.push([50 + rnd() * 170, 140 + rnd() * 70, rnd() < 0.5]);
+  })();
+
+  function createWard(canvas, opts) {
+    opts = opts || {};
+    var ctx = canvas.getContext("2d");
+    var state = STATES.indexOf(canon(opts.state)) >= 0 ? canon(opts.state) : "idle";
+    var stateStart = performance.now();
+    var raf = 0;
+    var reduce = !!(root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+    function resize() {
+      var dpr = root.devicePixelRatio || 1;
+      var r = canvas.getBoundingClientRect();
+      var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    }
+    function ell(x, y, rx, ry, fill, noStroke) {
+      ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (!noStroke) ctx.stroke();
+    }
+    function seg(x1, y1, x2, y2, color, w) {
+      ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = w;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore();
+    }
+    // A sleeve: thick polyline with an outline, so it matches the 3px line style.
+    function sleeve(pts, w) {
+      ctx.save();
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      [[w + 6, C.line], [w, C.blazer]].forEach(function (pass) {
+        ctx.strokeStyle = pass[1]; ctx.lineWidth = pass[0];
+        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+        for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+    function hand(x, y) { ell(x, y, 9, 8, C.skin); }
+    function rrect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    }
+    function folder(x, y, w, h) {
+      ctx.save(); ctx.fillStyle = C.folder; ctx.lineWidth = 2.5;
+      rrect(x + 4, y - 6, w * 0.38, 10, 3); ctx.fill(); ctx.stroke();
+      rrect(x, y, w, h, 3); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = "rgba(58,42,31,0.35)"; ctx.lineWidth = 1.5;
+      for (var i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(x + 8, y + 10 + i * 8); ctx.lineTo(x + w - 10, y + 10 + i * 8); ctx.stroke(); }
+      ctx.restore();
+    }
+
+    function draw(now) {
+      resize();
+      var cw = canvas.width, ch = canvas.height;
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cw, ch);
+      var s = Math.min(cw / W, ch / H);
+      ctx.setTransform(s, 0, 0, s, (cw - W * s) / 2, (ch - H * s) / 2);
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      ctx.strokeStyle = C.line; ctx.lineWidth = 3;
+
+      var time = reduce ? 0 : now / 1000;
+      var st = reduce ? 10 : (now - stateStart) / 1000;
+      var breathe = reduce ? 0 : Math.sin(time * 1.8) * 1.2;
+
+      ctx.save();
+      ctx.translate(0, breathe);
+
+      // neck
+      ctx.fillStyle = C.skin; ctx.fillRect(121, 108, 28, 34); ctx.strokeRect(121, 108, 28, 34);
+
+      // torso (blazer)
+      ctx.beginPath();
+      ctx.moveTo(46, 215);
+      ctx.bezierCurveTo(48, 165, 70, 142, 106, 135);
+      ctx.lineTo(164, 135);
+      ctx.bezierCurveTo(200, 142, 222, 165, 224, 215);
+      ctx.closePath();
+      ctx.fillStyle = C.blazer; ctx.fill(); ctx.stroke();
+      ctx.save(); ctx.clip();
+      FLECKS.forEach(function (f) {
+        ctx.fillStyle = f[2] ? C.fleck : C.blazerDark;
+        ctx.fillRect(f[0], f[1], 3, 1.5);
+      });
+      ctx.restore();
+
+      // shirt V, collar, tie
+      ctx.beginPath(); ctx.moveTo(112, 135); ctx.lineTo(158, 135); ctx.lineTo(135, 192); ctx.closePath();
+      ctx.fillStyle = C.shirt; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(129, 141); ctx.lineTo(141, 141); ctx.lineTo(139, 151); ctx.lineTo(131, 151); ctx.closePath();
+      ctx.fillStyle = C.tie; ctx.fill(); ctx.stroke();
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(131, 151); ctx.lineTo(139, 151); ctx.lineTo(143, 186); ctx.lineTo(135, 192); ctx.lineTo(127, 186); ctx.closePath();
+      ctx.fillStyle = C.tie; ctx.fill();
+      ctx.save(); ctx.clip();
+      ctx.strokeStyle = C.tieStripe; ctx.lineWidth = 2;
+      for (var k = 0; k < 7; k++) { ctx.beginPath(); ctx.moveTo(120, 146 + k * 8); ctx.lineTo(150, 160 + k * 8); ctx.stroke(); }
+      ctx.restore();
+      ctx.stroke();
+      ctx.restore();
+      [[112, 135, 125, 135, 118, 149], [158, 135, 145, 135, 152, 149]].forEach(function (c) {
+        ctx.beginPath(); ctx.moveTo(c[0], c[1]); ctx.lineTo(c[2], c[3]); ctx.lineTo(c[4], c[5]); ctx.closePath();
+        ctx.fillStyle = C.shirt; ctx.fill(); ctx.stroke();
+      });
+      // lapels
+      seg(108, 137, 97, 153, C.blazerDark, 3); seg(97, 153, 127, 190, C.blazerDark, 3);
+      seg(162, 137, 173, 153, C.blazerDark, 3); seg(173, 153, 143, 190, C.blazerDark, 3);
+
+      // ears + head
+      ell(101, 88, 7, 11, C.skin);
+      ell(169, 88, 7, 11, C.skin);
+      ell(135, 84, 34, 42, C.skin);
+
+      // hair: grey at the sides, thin on top
+      ctx.save(); ctx.fillStyle = C.hair; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(104, 58); ctx.quadraticCurveTo(95, 78, 103, 99); ctx.lineTo(109, 95); ctx.quadraticCurveTo(104, 78, 112, 60); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(166, 58); ctx.quadraticCurveTo(175, 78, 167, 99); ctx.lineTo(161, 95); ctx.quadraticCurveTo(166, 78, 158, 60); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = C.hairDark; ctx.lineWidth = 2.2;
+      [[112, 54, 124, 44, 136, 46], [122, 50, 134, 40, 148, 44], [134, 48, 146, 41, 158, 52], [116, 58, 128, 50, 140, 52]].forEach(function (h) {
+        ctx.beginPath(); ctx.moveTo(h[0], h[1]); ctx.quadraticCurveTo(h[2], h[3], h[4], h[5]); ctx.stroke();
+      });
+      ctx.restore();
+
+      // beard and mustache
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(102, 90);
+      ctx.quadraticCurveTo(104, 122, 135, 129);
+      ctx.quadraticCurveTo(166, 122, 168, 90);
+      ctx.lineTo(162, 92);
+      ctx.quadraticCurveTo(156, 104, 147, 105);
+      ctx.quadraticCurveTo(135, 101, 123, 105);
+      ctx.quadraticCurveTo(114, 104, 108, 92);
+      ctx.closePath();
+      ctx.fillStyle = C.beard; ctx.fill();
+      ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(135, 104, 14, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.restore();
+
+      // mouth
+      ctx.save(); ctx.strokeStyle = C.line; ctx.lineWidth = 2.5;
+      if (state === "alert") { ell(135, 114, 3.5, 4.5, "#5A3A30"); }
+      else if (state === "approving") { ctx.beginPath(); ctx.arc(135, 108, 10, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.arc(135, 107, 8, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke(); }
+      ctx.restore();
+
+      // nose
+      ctx.save(); ctx.strokeStyle = C.skinShade; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(135, 82); ctx.quadraticCurveTo(129, 94, 133, 96); ctx.quadraticCurveTo(137, 97, 140, 95); ctx.stroke();
+      ctx.restore();
+
+      // eyes
+      var eyeY = state === "reviewing" ? 85 : 81;
+      var blink = false;
+      if (!reduce && (state === "idle" || state === "delegating")) blink = (time % 4.2) < 0.14;
+      [121, 149].forEach(function (ex) {
+        if (blink) seg(ex - 4, eyeY, ex + 4, eyeY, C.line, 2.5);
+        else ell(ex, eyeY, 3, 3.2, C.line, true);
+      });
+
+      // brows
+      var by = state === "alert" ? 63 : 69;
+      ctx.save(); ctx.strokeStyle = C.hairDark; ctx.lineWidth = 3.5;
+      if (state === "alert") {
+        ctx.beginPath(); ctx.arc(120, by + 8, 9, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke();
+        ctx.beginPath(); ctx.arc(150, by + 8, 9, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke();
+      } else {
+        seg(113, by + 1, 128, by, C.hairDark, 3.5); seg(142, by, 157, by + 1, C.hairDark, 3.5);
+      }
+      ctx.restore();
+
+      // glasses: round dark frames
+      ctx.save(); ctx.strokeStyle = C.glasses; ctx.lineWidth = 3.6;
+      ctx.fillStyle = "rgba(255,255,255,0.10)";
+      rrect(108, 71, 25, 21, 9); ctx.fill(); ctx.stroke();
+      rrect(137, 71, 25, 21, 9); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(133, 79); ctx.quadraticCurveTo(135, 76, 137, 79); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(108, 78); ctx.lineTo(101, 82); ctx.moveTo(162, 78); ctx.lineTo(169, 82); ctx.stroke();
+      ctx.restore();
+
+      // arms + props
+      var wave = reduce ? 0 : Math.sin(st * 3) * 3;
+      var L = { sh: [72, 158], pts: [[72, 158], [64, 206]], hand: [86, 205] };
+      var R = { sh: [198, 158], pts: [[198, 158], [206, 206]], hand: [184, 205] };
+      var front = [];   // things drawn after the desk
+
+      if (state === "delegating") {
+        R.pts = [[198, 158], [226, 178], [250, 166 + wave]];
+        R.hand = [256, 164 + wave];
+        front.push(function () { folder(236, 138 + wave, 32, 20); hand(R.hand[0], R.hand[1]); });
+      }
+      if (state === "reviewing") {
+        L.pts = [[72, 158], [86, 198], [110, 182]]; L.hand = [112, 180];
+        R.pts = [[198, 158], [184, 198], [160, 182]]; R.hand = [158, 180];
+      }
+      if (state === "alert") {
+        R.pts = [[198, 158], [222, 142], [214, 112 + wave * 0.5]];
+        R.hand = [212, 108 + wave * 0.5];
+      }
+      if (state === "approving") {
+        L.pts = [[72, 158], [46, 142], [52, 110]];
+        L.hand = [54, 106];
+      }
+
+      sleeve(L.pts, 18);
+      sleeve(R.pts, 18);
+      ctx.restore();   // end breathing translate for body; desk does not move
+
+      // desk
+      ctx.fillStyle = C.desk; ctx.fillRect(14, 206, 242, 60); ctx.strokeRect(14, 206, 242, 60);
+      ctx.fillStyle = C.deskTop; ctx.fillRect(6, 198, 258, 12); ctx.strokeRect(6, 198, 258, 12);
+      ctx.save();
+      ctx.fillStyle = C.brass; rrect(96, 222, 78, 24, 4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = C.line; ctx.font = "600 13px 'Public Sans', system-ui, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("WARD", 135, 234.5);
+      ctx.restore();
+
+      ctx.save(); ctx.translate(0, breathe);
+      // hands and props in front of the desk line
+      if (state === "reviewing") {
+        folder(102, 158, 66, 44);
+      }
+      if (state === "alert") {
+        ctx.save(); ctx.lineWidth = 3;
+        seg(R.hand[0] + 2, R.hand[1] - 6, R.hand[0] + 10, R.hand[1] - 28, C.line, 8);
+        seg(R.hand[0] + 2, R.hand[1] - 6, R.hand[0] + 10, R.hand[1] - 28, C.pen, 4.5);
+        ctx.restore();
+      }
+      if (state === "approving") {
+        ctx.save(); ctx.fillStyle = C.paper; ctx.lineWidth = 2.5;
+        rrect(24, 50, 44, 50, 3); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = "rgba(58,42,31,0.35)"; ctx.lineWidth = 1.5;
+        for (var j = 0; j < 4; j++) { ctx.beginPath(); ctx.moveTo(31, 60 + j * 7); ctx.lineTo(60, 60 + j * 7); ctx.stroke(); }
+        var pop = Math.min(1, st * 3);
+        ctx.strokeStyle = C.check; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(34, 88); ctx.lineTo(34 + 6 * pop, 88 + 5 * pop);
+        if (pop > 0.5) ctx.lineTo(34 + 6 + 14 * (pop - 0.5) * 2, 93 - 14 * (pop - 0.5) * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+      hand(L.hand[0], L.hand[1]);
+      hand(R.hand[0], R.hand[1]);
+      front.forEach(function (f) { f(); });
+      ctx.restore();
+
+      if (!reduce) raf = root.requestAnimationFrame(draw);
+    }
+
+    function start() { root.cancelAnimationFrame(raf); raf = root.requestAnimationFrame(draw); }
+    var api = {
+      setState: function (next) {
+        var asked = next; next = canon(next);
+        if (STATES.indexOf(next) < 0) throw new Error("Unknown Ward state: " + asked + ". Use one of: " + STATES.concat(Object.keys(ALIAS)).join(", "));
+        if (next !== state) { state = next; stateStart = performance.now(); }
+        start();
+      },
+      getState: function () { return state; },
+      destroy: function () { root.cancelAnimationFrame(raf); }
+    };
+    if (reduce && root.addEventListener) root.addEventListener("resize", start);
+    start();
+    return api;
+  }
+
+  root.createWard = createWard;
+  if (typeof module !== "undefined" && module.exports) module.exports = { createWard: createWard };
+})(typeof window !== "undefined" ? window : this);
+
+</script>
+<script>
+/*
+ * market.js: Scout, the Customer & Market agent for the Neur Launch Desk demo.
+ * A friendly platypus: taupe fur, a wide slate-gray bill, webbed feet, a flat paddle tail,
+ * a forest-green vest over a cream shirt. Props: clipboard and pencil, a yellow sticky note, a price tag.
+ *
+ * Usage:
+ *   const scout = createMarket(canvas, opts);   // opts: { state: "idle" }
+ *   scout.setState("working");                  // idle | waiting | working | flagging | done
+ *                                               // also: "researching" (= working), "reading-note"
+ *   scout.getState();
+ *   scout.destroy();                            // stops the animation loop
+ *
+ * States and the demo event that triggers each:
+ *   idle          reset(), before work arrives: relaxed, blinking, tail swaying
+ *   waiting       market.waiting: arms folded, eyes up toward Ward, tail tapping
+ *   working       market.received: clipboard up, pencil ticking boxes, eyes on the list (alias: "researching")
+ *   flagging      market.done with "signal": "flag" (e.g. no realistic customer base): clipboard up with a red X, worried
+ *   reading-note  Quill's note lands ("Direct sales only. No coffee shops."): holds the note up, head tilted, brows raised
+ *   done          handoff sent to Ward: holds up a "$3.50" price tag with a green check, hand on hip, happy hop
+ *
+ * Style matches quill.js / ward.js: 270 x 260 design box, outline #3A2A1F at lineWidth 3,
+ * round joins and caps, flat fills only, soft ground shadow at the feet.
+ * Motion: breathing bob and blinks (~3.6 s); tail sway; pencil ticks and checks filling in while researching;
+ * a gentle head tilt while reading the note; a hop, tag swing and tail wag when done.
+ * With prefers-reduced-motion, each state draws once as a still pose and no loop runs.
+ * Deferred hooks (not built): "flagging" state, speech bubbles, reacting to passing folders, click-to-inspect.
+ */
+(function () {
+  "use strict";
+
+  var W = 270, H = 260;
+  // The five universal states every Neur character supports, plus Scout's own names.
+  var STATES = ["idle", "waiting", "working", "flagging", "done", "researching", "reading-note"];
+  var ALIAS = { researching: "working" };
+  var O = "#3A2A1F";
+
+  // Fixed palette: the same on light and dark pages.
+  var C = {
+    fur: "#A57B5E",
+    furDark: "#7E5A42",
+    belly: "#D9BFA4",
+    bill: "#5D6169",
+    billDark: "#43464D",
+    shirt: "#F6EBD6",
+    vest: "#3E7B4F",
+    vestDark: "#2D5C3A",
+    brass: "#C9A04A",
+    eye: "#1E1612",
+    shine: "#FFFFFF",
+    board: "#9A7350",
+    paper: "#FBF6EC",
+    clip: "#8E8E8E",
+    pencil: "#E3A83C",
+    pencilTip: "#3A2A1F",
+    ink: "#9C9184",
+    note: "#F5E27A",
+    tag: "#FBF6EC",
+    string: "#8A5A3B",
+    check: "#2F8A4E",
+    shadow: "rgba(20,14,10,0.16)"
+  };
+
+  // ---------- helpers ----------
+  function line(ctx, w, color) {
+    ctx.strokeStyle = color || O; ctx.lineWidth = w || 3;
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+  }
+  function fillStroke(ctx, fill, w) { ctx.fillStyle = fill; ctx.fill(); line(ctx, w); ctx.stroke(); }
+  function ellipse(ctx, x, y, rx, ry, fill, w, rot) {
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot || 0, 0, Math.PI * 2);
+    if (w === 0) { ctx.fillStyle = fill; ctx.fill(); } else fillStroke(ctx, fill, w);
+  }
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function path(ctx, pts) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); }
+  // Ward's sleeve trick: dark line at width + 6, then the fill color on top.
+  function sleeve(ctx, pts, width, color) {
+    path(ctx, pts); line(ctx, width + 6); ctx.stroke();
+    path(ctx, pts); line(ctx, width, color); ctx.stroke();
+  }
+  function hand(ctx, x, y) {
+    // small webbed hand: three rounded toes
+    ellipse(ctx, x, y, 8, 7, C.bill, 2.5);
+    line(ctx, 1.8, C.billDark);
+    ctx.beginPath(); ctx.moveTo(x - 3, y + 2); ctx.lineTo(x - 3, y + 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 3, y + 2); ctx.lineTo(x + 3, y + 6); ctx.stroke();
+  }
+  function arm(ctx, pts) { sleeve(ctx, pts, 13, C.fur); var e = pts[pts.length - 1]; hand(ctx, e[0], e[1]); }
+  function check(ctx, x, y, s) {
+    ctx.beginPath(); ctx.moveTo(x - 7 * s, y); ctx.lineTo(x - 2 * s, y + 6 * s); ctx.lineTo(x + 9 * s, y - 7 * s);
+    line(ctx, 4.5 * s, C.check); ctx.stroke();
+  }
+
+  // ---------- body parts ----------
+  function shadow(ctx) { ctx.beginPath(); ctx.ellipse(135, 241, 64, 8, 0, 0, Math.PI * 2); ctx.fillStyle = C.shadow; ctx.fill(); }
+
+  function tail(ctx, sway) {
+    ctx.save();
+    ctx.translate(170, 214); ctx.rotate(-0.35 + sway);
+    ellipse(ctx, 34, 0, 36, 15, C.furDark);
+    line(ctx, 2, "rgba(58,42,31,0.35)");
+    for (var i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(18 + i * 12, -8); ctx.lineTo(24 + i * 12, 8); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  function foot(ctx, x) {
+    rrect(ctx, x - 9, 202, 18, 28, 7); fillStroke(ctx, C.fur);
+    ctx.beginPath();
+    ctx.moveTo(x - 15, 236); ctx.quadraticCurveTo(x - 14, 224, x, 224); ctx.quadraticCurveTo(x + 14, 224, x + 15, 236);
+    ctx.quadraticCurveTo(x + 10, 233, x + 5, 237); ctx.quadraticCurveTo(x, 233, x - 5, 237); ctx.quadraticCurveTo(x - 10, 233, x - 15, 236);
+    ctx.closePath(); fillStroke(ctx, C.bill, 2.5);
+  }
+
+  function body(ctx) {
+    ellipse(ctx, 135, 154, 56, 72, C.fur);
+    // shirt + vest, clipped to the body
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(135, 154, 56, 72, 0, 0, Math.PI * 2); ctx.clip();
+    ctx.beginPath(); ctx.moveTo(110, 176); ctx.lineTo(160, 176); ctx.lineTo(160, 232); ctx.lineTo(110, 232); ctx.closePath();
+    fillStroke(ctx, C.shirt);
+    ctx.beginPath(); ctx.moveTo(70, 174); ctx.lineTo(116, 174); ctx.lineTo(132, 218); ctx.lineTo(132, 232); ctx.lineTo(70, 232); ctx.closePath();
+    fillStroke(ctx, C.vest);
+    ctx.beginPath(); ctx.moveTo(200, 174); ctx.lineTo(154, 174); ctx.lineTo(138, 218); ctx.lineTo(138, 232); ctx.lineTo(200, 232); ctx.closePath();
+    fillStroke(ctx, C.vest);
+    ctx.restore();
+    ctx.beginPath(); ctx.ellipse(135, 154, 56, 72, 0, 0, Math.PI * 2); line(ctx, 3); ctx.stroke();
+    // shirt collar points
+    ctx.beginPath(); ctx.moveTo(118, 174); ctx.lineTo(127, 186); ctx.lineTo(135, 176); ctx.closePath(); fillStroke(ctx, C.shirt, 2.5);
+    ctx.beginPath(); ctx.moveTo(152, 174); ctx.lineTo(143, 186); ctx.lineTo(135, 176); ctx.closePath(); fillStroke(ctx, C.shirt, 2.5);
+    // brass buttons and a pocket
+    ellipse(ctx, 128, 202, 3.5, 3.5, C.brass, 2);
+    ellipse(ctx, 132, 215, 3.5, 3.5, C.brass, 2);
+    rrect(ctx, 156, 194, 18, 10, 2); fillStroke(ctx, C.vestDark, 2.5);
+  }
+
+  function eyes(ctx, mode, dx, dy) {
+    dx = dx || 0; dy = dy || 0;
+    [116, 154].forEach(function (x) {
+      var y = 110;
+      if (mode === "happy") {
+        ctx.beginPath(); ctx.arc(x, y + 4, 7, Math.PI * 1.12, Math.PI * 1.88); line(ctx, 3.5); ctx.stroke();
+      } else if (mode === "blink") {
+        ctx.beginPath(); ctx.moveTo(x - 6, y + 1); ctx.quadraticCurveTo(x, y + 4, x + 6, y + 1); line(ctx, 3.5); ctx.stroke();
+      } else {
+        ellipse(ctx, x + dx, y + dy, 6, 7.5, C.eye, 0);
+        ellipse(ctx, x + dx - 2, y + dy - 3, 2.3, 2.3, C.shine, 0);
+      }
+    });
+  }
+
+  function brows(ctx, mode) {
+    line(ctx, 3.5, C.furDark);
+    if (mode === "worried") {
+      ctx.beginPath(); ctx.moveTo(106, 97); ctx.lineTo(124, 90); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(164, 97); ctx.lineTo(146, 90); ctx.stroke();
+    } else if (mode === "focused") {
+      ctx.beginPath(); ctx.moveTo(106, 94); ctx.lineTo(124, 98); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(164, 94); ctx.lineTo(146, 98); ctx.stroke();
+    } else if (mode === "curious") {
+      ctx.beginPath(); ctx.moveTo(106, 96); ctx.lineTo(124, 96); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(146, 92); ctx.quadraticCurveTo(155, 85, 164, 90); ctx.stroke();
+    } else if (mode === "up") {
+      ctx.beginPath(); ctx.moveTo(106, 93); ctx.quadraticCurveTo(115, 87, 124, 92); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(146, 92); ctx.quadraticCurveTo(155, 87, 164, 93); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(107, 96); ctx.quadraticCurveTo(115, 93, 123, 95); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(147, 95); ctx.quadraticCurveTo(155, 93, 163, 96); ctx.stroke();
+    }
+  }
+
+  function bill(ctx, mood) {
+    // wide, flat duck-like bill that flares out past the face
+    ctx.beginPath();
+    ctx.moveTo(110, 126);
+    ctx.quadraticCurveTo(135, 118, 160, 126);
+    ctx.quadraticCurveTo(187, 138, 185, 156);
+    ctx.quadraticCurveTo(181, 175, 135, 173);
+    ctx.quadraticCurveTo(89, 175, 85, 156);
+    ctx.quadraticCurveTo(83, 138, 110, 126);
+    ctx.closePath(); fillStroke(ctx, C.bill);
+    // lighter upper bill
+    ctx.beginPath();
+    ctx.moveTo(113, 130); ctx.quadraticCurveTo(135, 123, 157, 130);
+    ctx.quadraticCurveTo(177, 139, 177, 148); ctx.quadraticCurveTo(135, 155, 93, 148);
+    ctx.quadraticCurveTo(93, 139, 113, 130); ctx.closePath();
+    ctx.fillStyle = "#777C85"; ctx.fill();
+    ellipse(ctx, 127, 132, 2.8, 2.2, C.billDark, 0);
+    ellipse(ctx, 143, 132, 2.8, 2.2, C.billDark, 0);
+    line(ctx, 2.5, C.billDark);
+    if (mood === "happy") {
+      ctx.beginPath(); ctx.moveTo(102, 158); ctx.quadraticCurveTo(135, 176, 168, 158);
+      ctx.fillStyle = O; ctx.fill(); line(ctx, 2.5); ctx.stroke();
+    } else if (mood === "frown") {
+      ctx.beginPath(); ctx.moveTo(104, 164); ctx.quadraticCurveTo(135, 152, 166, 164); ctx.stroke();
+    } else if (mood === "hm") {
+      ctx.beginPath(); ctx.moveTo(104, 162); ctx.quadraticCurveTo(135, 160, 166, 163); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(100, 159); ctx.quadraticCurveTo(135, 169, 170, 159); ctx.stroke();
+    }
+  }
+
+  // ---------- props ----------
+  function clipboard(ctx, ticks, x, y, rot, redX) {
+    ctx.save(); ctx.translate(x === undefined ? 106 : x, y === undefined ? 190 : y); ctx.rotate(rot === undefined ? 0.12 : rot);
+    rrect(ctx, -24, -32, 48, 62, 5); fillStroke(ctx, C.board);
+    rrect(ctx, -19, -24, 38, 50, 3); fillStroke(ctx, C.paper, 2.5);
+    rrect(ctx, -10, -37, 20, 10, 3); fillStroke(ctx, C.clip, 2.5);
+    for (var i = 0; i < 4; i++) {
+      var y = -14 + i * 11;
+      rrect(ctx, -14, y - 4, 8, 8, 1.5); fillStroke(ctx, C.paper, 1.8);
+      line(ctx, 2, C.ink); ctx.beginPath(); ctx.moveTo(-2, y); ctx.lineTo(12, y); ctx.stroke();
+      if (i < ticks) check(ctx, -10, y - 1, 0.45);
+    }
+    if (redX) {
+      line(ctx, 6, "#B8322A");
+      ctx.beginPath(); ctx.moveTo(-15, -18); ctx.lineTo(15, 20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(15, -18); ctx.lineTo(-15, 20); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function pencil(ctx, x, y) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(-0.9);
+    rrect(ctx, -4, -26, 8, 26, 2); fillStroke(ctx, C.pencil, 2.5);
+    ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(4, 0); ctx.lineTo(0, 9); ctx.closePath(); fillStroke(ctx, C.paper, 2.5);
+    ctx.restore();
+  }
+
+  function stickyNote(ctx, x, y, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.beginPath(); ctx.rect(-19, -18, 38, 36); fillStroke(ctx, C.note, 2.5);
+    line(ctx, 2, "rgba(58,42,31,0.45)");
+    [-8, 0, 8].forEach(function (yy, i) { ctx.beginPath(); ctx.moveTo(-12, yy); ctx.lineTo(i === 2 ? 2 : 12, yy); ctx.stroke(); });
+    ctx.restore();
+  }
+
+  function priceTag(ctx, x, y, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    // string up to the hand
+    line(ctx, 2.5, C.string); ctx.beginPath(); ctx.moveTo(-24, 0); ctx.lineTo(-24, 14); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-26, 0); ctx.lineTo(-14, -15); ctx.lineTo(24, -15); ctx.lineTo(24, 15); ctx.lineTo(-14, 15); ctx.closePath();
+    fillStroke(ctx, C.tag);
+    ellipse(ctx, -16, 0, 2.6, 2.6, C.string, 2);
+    ctx.fillStyle = O; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("$3.50", 5, 1);
+    ctx.restore();
+  }
+
+  // ---------- poses ----------
+  function draw(ctx, state, time, st, reduce) {
+    state = ALIAS[state] || state;
+    time = time || 0; st = st === undefined ? 10 : st;
+    var still = !!reduce;
+    var blinking = !still && (time % 3.6) < 0.16;
+    var bob = still ? 0 : Math.sin(time * 2) * 2;
+    var hop = (state === "done" && !still && st < 0.7) ? -12 * Math.sin((st / 0.7) * Math.PI) : 0;
+    var sway = still ? 0 : Math.sin(time * 1.6) * 0.08;
+    if (state === "done" && !still) sway = -0.25 + Math.sin(time * 9) * 0.12;   // wag
+    if (state === "waiting" && !still) sway = Math.abs(Math.sin(time * 5)) * -0.12;  // tap
+
+    ctx.save();
+    ctx.translate(135, 240); ctx.scale(1.18, 1.18); ctx.translate(-135, -240);
+    shadow(ctx);
+    ctx.save();
+    ctx.translate(0, hop);
+    tail(ctx, sway);
+    foot(ctx, 116); foot(ctx, 154);
+    ctx.translate(0, bob);
+    body(ctx);
+
+    if (state === "idle") {
+      eyes(ctx, blinking ? "blink" : "open"); brows(ctx); bill(ctx);
+      var s = still ? 0 : Math.sin(time * 2) * 2;
+      arm(ctx, [[88, 158], [78, 176], [82 - s, 198]]);
+      arm(ctx, [[182, 158], [192, 176], [188 + s, 198]]);
+    } else if (state === "working") {
+      var tick = still ? 0 : Math.max(0, Math.sin(time * 12)) * 4;
+      var ticks = still ? 3 : Math.min(4, 1 + Math.floor(st / 1.1));
+      eyes(ctx, blinking ? "blink" : "open", -3, 3); brows(ctx, "focused"); bill(ctx);
+      arm(ctx, [[88, 158], [72, 190], [88, 214]]);
+      clipboard(ctx, ticks);
+      arm(ctx, [[182, 158], [170, 192], [132 - tick, 188 + tick]]);
+      pencil(ctx, 132 - tick, 188 + tick);
+    } else if (state === "waiting") {
+      // has work coming: arms folded, eyes up toward Ward, tail tapping
+      eyes(ctx, blinking ? "blink" : "open", 2, -3); brows(ctx); bill(ctx, "hm");
+      arm(ctx, [[88, 166], [118, 196], [160, 190]]);
+      arm(ctx, [[182, 166], [152, 198], [110, 190]]);
+    } else if (state === "flagging") {
+      // something stops the plan: clipboard up with a red X, hand on his cheek, worried
+      var jolt = still ? 0 : Math.sin(time * 16) * 1.5;
+      eyes(ctx, blinking ? "blink" : "open", 0, -1); brows(ctx, "worried"); bill(ctx, "frown");
+      arm(ctx, [[88, 158], [72, 140], [88, 128]]);
+      arm(ctx, [[182, 158], [208, 150], [214, 122]]);
+      clipboard(ctx, 0, 214 + jolt, 100, -0.12, true);
+    } else if (state === "reading-note") {
+      var tilt = still ? 0.07 : 0.07 + Math.sin(time * 1.5) * 0.02;
+      ctx.save(); ctx.translate(135, 140); ctx.rotate(tilt); ctx.translate(-135, -140);
+      eyes(ctx, blinking ? "blink" : "open", 3, -2); brows(ctx, "curious"); bill(ctx, "hm");
+      ctx.restore();
+      arm(ctx, [[88, 158], [78, 176], [82, 198]]);
+      arm(ctx, [[182, 158], [206, 140], [202, 112]]);
+      stickyNote(ctx, 206, 92, 0.12 + (still ? 0 : Math.sin(time * 1.5) * 0.04));
+    } else if (state === "done") {
+      var swing = still ? 0 : Math.sin(time * 4) * 0.08;
+      eyes(ctx, "happy"); brows(ctx, "up"); bill(ctx, "happy");
+      arm(ctx, [[88, 158], [68, 180], [94, 194]]);              // hand on hip
+      arm(ctx, [[182, 158], [204, 132], [196, 106]]);           // raised
+      priceTag(ctx, 218, 92, -0.1 + swing);
+      ellipse(ctx, 166, 74, 11, 11, C.check, 2.5);
+      ctx.save(); ctx.translate(166, 74);
+      ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(-2, 5); ctx.lineTo(7, -5); line(ctx, 3.5, "#FFFFFF"); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // ---------- public API (matches createQuill / createWard) ----------
+  function createMarket(canvas, opts) {
+    opts = opts || {};
+    var root = typeof window !== "undefined" ? window : {};
+    var ctx = canvas.getContext("2d");
+    var state = STATES.indexOf(opts.state) >= 0 ? opts.state : "idle";
+    var now = function () { return typeof performance !== "undefined" ? performance.now() : Date.now(); };
+    var stateStart = now();
+    var raf = 0;
+    var reduce = !!(root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    var raff = root.requestAnimationFrame ? root.requestAnimationFrame.bind(root) : function (f) { return setTimeout(function () { f(now()); }, 16); };
+    var caf = root.cancelAnimationFrame ? root.cancelAnimationFrame.bind(root) : clearTimeout;
+
+    function resize() {
+      var dpr = root.devicePixelRatio || 1;
+      var r = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : { width: canvas.width, height: canvas.height };
+      var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    }
+    function frame(ts) {
+      resize();
+      var cw = canvas.width, ch = canvas.height;
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cw, ch);
+      var s = Math.min(cw / W, ch / H);
+      ctx.setTransform(s, 0, 0, s, (cw - W * s) / 2, (ch - H * s) / 2);
+      var t = ts === undefined ? now() : ts;
+      draw(ctx, state, reduce ? 0 : t / 1000, reduce ? 10 : (t - stateStart) / 1000, reduce);
+      if (!reduce) raf = raff(frame);
+    }
+    function start() { caf(raf); raf = raff(frame); }
+
+    var api = {
+      setState: function (next) {
+        if (STATES.indexOf(next) < 0) throw new Error("Unknown Scout state: " + next + ". Use one of: " + STATES.join(", "));
+        if (next !== state) { state = next; stateStart = now(); }
+        start();
+      },
+      getState: function () { return state; },
+      destroy: function () { caf(raf); }
+    };
+    if (reduce && root.addEventListener) root.addEventListener("resize", start);
+    start();
+    return api;
+  }
+
+  createMarket.STATES = STATES.slice(0, 5); // the five universal states
+  createMarket._draw = draw; // used by preview sheets
+
+  if (typeof window !== "undefined") window.createMarket = createMarket;
+  if (typeof module !== "undefined" && module.exports) module.exports = { createMarket: createMarket };
+})();
+
+</script>
+<script>
+/*
+ * finance.js: Penny, the Finance agent ("Money Coach") for the Neur Launch Desk demo.
+ * A sweet grandma piggy bank: white curly bun, pearls, a lavender cardigan with a flower brooch, a coin slot and a calculator.
+ *
+ * Usage:
+ *   const penny = createFinance(canvas, opts);   // opts: { state: "idle" }
+ *   penny.setState("waiting");                   // idle | waiting | working | flagging | done  ("calculating" = working)
+ *   penny.getState();
+ *   penny.destroy();
+ *
+ * States and the demo event that triggers each:
+ *   idle         reset(), before anything happens: arms relaxed at her sides, smiling
+ *   waiting      waiting on Customer & Market and Quill: arms folded, foot tapping, eyes glancing left
+ *   working      finance.received, running the numbers (and again for Ward's follow-up): calculator up, tapping keys, tape curling out
+ *                (alias: "calculating")
+ *   flagging     finance.done with "signal": "flag" (e.g. startup cost over budget): red "OVER" on the calculator, hoof on cheek, worried
+ *   done         handoff sent to Ward: holds up the printed tape with a green check, waves, happy eyes
+ *
+ * Style matches the shared spec: 270 x 260 design box, outline #3A2A1F at lineWidth 3,
+ * round joins and caps, flat fills only, soft ground shadow at the feet.
+ *
+ * Motion: breathing bob and blinks (~3.8 s) in every state; foot taps and drifting eyes while waiting;
+ * a tapping hoof and flickering digits while calculating; a hop on arrival, then a slow wave, when done.
+ * With prefers-reduced-motion, each state draws once as a still pose and no loop runs.
+ * Deferred hooks (not built): "flagging" state, speech bubbles, reacting to passing folders, click-to-inspect.
+ */
+(function () {
+  "use strict";
+
+  var W = 270, H = 260;
+  // The five universal states every Neur character supports, plus Penny's own name for working.
+  var STATES = ["idle", "waiting", "working", "flagging", "done", "calculating"];
+  var ALIAS = { calculating: "working" };
+  var O = "#3A2A1F";
+
+  // Fixed palette: the same on light and dark pages.
+  var C = {
+    body: "#F7B5C3",
+    bodyDark: "#EC8FA4",
+    snout: "#F29CB0",
+    blush: "#F27D9A",
+    hoof: "#D9758D",
+    hair: "#F3EFE8",
+    hairShade: "#CFC7BC",
+    brow: "#9A8F86",
+    cardigan: "#9C7BB8",
+    cardiganDark: "#7B5C99",
+    pearl: "#FFFDF7",
+    brooch: "#F27D9A",
+    broochMid: "#F7D46B",
+    eye: "#3A2A1F",
+    shine: "#FFFFFF",
+    calc: "#4A4954",
+    calcScreen: "#D3E8C9",
+    calcKey: "#F4EEE2",
+    calcKeyHot: "#DE7F72",
+    tape: "#FFFBF2",
+    ink: "#9C9184",
+    check: "#2F8A4E",
+    shadow: "rgba(20,14,10,0.16)",
+    mouth: "#3A2A1F",
+    tongue: "#F27D9A"
+  };
+
+  // ---------- small drawing helpers ----------
+
+  function line(ctx, w) {
+    ctx.strokeStyle = O;
+    ctx.lineWidth = w || 3;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+  }
+
+  function fillStroke(ctx, fill, w) {
+    ctx.fillStyle = fill;
+    ctx.fill();
+    line(ctx, w);
+    ctx.stroke();
+  }
+
+  function ellipse(ctx, x, y, rx, ry, fill, w) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    if (w === 0) { ctx.fillStyle = fill; ctx.fill(); } else { fillStroke(ctx, fill, w); }
+  }
+
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function path(ctx, pts) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  }
+
+  // Ward's sleeve trick: dark line at width + 6, then the fill color on top.
+  function sleeve(ctx, pts, width, color) {
+    path(ctx, pts);
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    ctx.strokeStyle = O; ctx.lineWidth = width + 6; ctx.stroke();
+    path(ctx, pts);
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+  }
+
+  function arm(ctx, pts) {
+    sleeve(ctx, pts, 14, C.body);
+    var end = pts[pts.length - 1];
+    ellipse(ctx, end[0], end[1], 8, 8, C.hoof, 2.5);
+  }
+
+  function check(ctx, x, y, s) {
+    ctx.beginPath();
+    ctx.moveTo(x - 7 * s, y);
+    ctx.lineTo(x - 2 * s, y + 6 * s);
+    ctx.lineTo(x + 9 * s, y - 7 * s);
+    ctx.strokeStyle = C.check; ctx.lineWidth = 4.5 * s;
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.stroke();
+  }
+
+  // ---------- body parts ----------
+
+  function shadow(ctx) {
+    ctx.beginPath();
+    ctx.ellipse(135, 241, 62, 8, 0, 0, Math.PI * 2);
+    ctx.fillStyle = C.shadow; ctx.fill();
+  }
+
+  function leg(ctx, x, lift, tilt) {
+    ctx.save();
+    ctx.translate(x + 12, 205 - lift);
+    ctx.rotate(tilt || 0);
+    rrect(ctx, -12, -6, 24, 38, 9);
+    fillStroke(ctx, C.body);
+    rrect(ctx, -12, 22, 24, 10, 5);
+    fillStroke(ctx, C.hoof, 2.5);
+    ctx.restore();
+  }
+
+  function tail(ctx) {
+    var pts = [[200, 172], [214, 166], [222, 172], [218, 181], [210, 180], [211, 173]];
+    sleeve(ctx, pts, 5, C.body);
+  }
+
+  function ears(ctx, perk) {
+    var p = perk ? 6 : 0;
+    // rounded, slightly floppy pig ears
+    ctx.beginPath(); ctx.moveTo(84, 106);
+    ctx.quadraticCurveTo(66, 74, 78, 62 - p);
+    ctx.quadraticCurveTo(102, 62 - p, 120, 88);
+    ctx.closePath();
+    fillStroke(ctx, C.body);
+    ctx.beginPath(); ctx.moveTo(92, 97);
+    ctx.quadraticCurveTo(80, 78, 86, 72 - p);
+    ctx.quadraticCurveTo(100, 72 - p, 110, 89);
+    ctx.closePath();
+    ctx.fillStyle = C.bodyDark; ctx.fill();
+
+    ctx.beginPath(); ctx.moveTo(186, 106);
+    ctx.quadraticCurveTo(204, 74, 192, 62 - p);
+    ctx.quadraticCurveTo(168, 62 - p, 150, 88);
+    ctx.closePath();
+    fillStroke(ctx, C.body);
+    ctx.beginPath(); ctx.moveTo(178, 97);
+    ctx.quadraticCurveTo(190, 78, 184, 72 - p);
+    ctx.quadraticCurveTo(170, 72 - p, 160, 89);
+    ctx.closePath();
+    ctx.fillStyle = C.bodyDark; ctx.fill();
+  }
+
+  function body(ctx) {
+    ellipse(ctx, 135, 148, 70, 66, C.body);
+    // coin slot
+    rrect(ctx, 136, 88, 26, 7, 3.5);
+    ctx.fillStyle = O; ctx.fill();
+  }
+
+  function hair(ctx) {
+    // soft white curls along the top of her head, and a bun with a hairpin
+    var curls = [[96, 100, 9], [106, 91, 10], [119, 86, 10]];
+    for (var i = 0; i < curls.length; i++) ellipse(ctx, curls[i][0], curls[i][1], curls[i][2], curls[i][2], C.hair, 2.5);
+    ellipse(ctx, 112, 70, 15, 14, C.hair, 3);
+    ctx.strokeStyle = C.hairShade; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(112, 70, 7, Math.PI * 0.9, Math.PI * 1.9); ctx.stroke();
+    ctx.beginPath(); ctx.arc(106, 92, 4, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+    // hairpin
+    line(ctx, 3); ctx.beginPath(); ctx.moveTo(98, 62); ctx.lineTo(128, 76); ctx.stroke();
+    ellipse(ctx, 98, 62, 3.5, 3.5, C.brooch, 2);
+  }
+
+  function cardigan(ctx) {
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(135, 148, 70, 66, 0, 0, Math.PI * 2); ctx.clip();
+    // two front panels with a V opening
+    ctx.beginPath(); ctx.moveTo(55, 170); ctx.lineTo(118, 172); ctx.lineTo(131, 222); ctx.lineTo(55, 222); ctx.closePath();
+    fillStroke(ctx, C.cardigan);
+    ctx.beginPath(); ctx.moveTo(215, 170); ctx.lineTo(152, 172); ctx.lineTo(139, 222); ctx.lineTo(215, 222); ctx.closePath();
+    fillStroke(ctx, C.cardigan);
+    // a little knit texture
+    ctx.strokeStyle = C.cardiganDark; ctx.lineWidth = 2;
+    [[80, 192], [94, 204], [176, 194], [190, 206]].forEach(function (k) {
+      ctx.beginPath(); ctx.moveTo(k[0] - 4, k[1] - 3); ctx.lineTo(k[0], k[1] + 2); ctx.lineTo(k[0] + 4, k[1] - 3); ctx.stroke();
+    });
+    ctx.restore();
+    // re-stroke the body outline over the cardigan
+    ctx.beginPath(); ctx.ellipse(135, 148, 70, 66, 0, 0, Math.PI * 2); line(ctx, 3); ctx.stroke();
+    // buttons
+    ellipse(ctx, 150, 200, 3.5, 3.5, C.cardiganDark, 2);
+    ellipse(ctx, 147, 212, 3.5, 3.5, C.cardiganDark, 2);
+    // flower brooch
+    for (var i = 0; i < 5; i++) {
+      var a = (i / 5) * Math.PI * 2;
+      ellipse(ctx, 100 + Math.cos(a) * 5, 186 + Math.sin(a) * 5, 4, 4, C.brooch, 1.8);
+    }
+    ellipse(ctx, 100, 186, 3, 3, C.broochMid, 1.8);
+  }
+
+  function pearls(ctx) {
+    for (var x = 115; x <= 156; x += 6.8) {
+      var t = (x - 135) / 21;
+      ellipse(ctx, x, 192 + 6 * (1 - t * t), 3.4, 3.4, C.pearl, 1.8);
+    }
+  }
+
+  function lashes(ctx, x, y, side) {
+    // eyelashes on the upper outer corner
+    // side = -1 for the eye on the viewer's left, +1 for the right
+    line(ctx, 2.5);
+    ctx.beginPath(); ctx.moveTo(x + side * 6, y - 7); ctx.lineTo(x + side * 11, y - 12); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + side * 8, y - 3); ctx.lineTo(x + side * 14, y - 6); ctx.stroke();
+    smileLines(ctx, x, y, side);
+  }
+
+  function smileLines(ctx, x, y, side) {
+    // gentle smile lines at the lower outer corner of each eye
+    // side = -1 for the eye on the viewer's left, +1 for the right
+    ctx.strokeStyle = C.brow; ctx.lineWidth = 2; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(x + side * 8, y + 2, 7, side < 0 ? Math.PI * 0.75 : Math.PI * 0.05, side < 0 ? Math.PI * 0.95 : Math.PI * 0.25); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x + side * 8, y + 2, 11, side < 0 ? Math.PI * 0.72 : Math.PI * 0.08, side < 0 ? Math.PI * 0.92 : Math.PI * 0.28); ctx.stroke();
+  }
+
+  function eyes(ctx, mode, dx, dy) {
+    dx = dx || 0; dy = dy || 0;
+    var xs = [113, 157];
+    for (var i = 0; i < 2; i++) {
+      var x = xs[i], y = 132, side = i === 0 ? -1 : 1;
+      if (mode === "blink") {
+        line(ctx, 3.5);
+        ctx.beginPath(); ctx.moveTo(x - 8, y + 1); ctx.quadraticCurveTo(x, y + 5, x + 8, y + 1); ctx.stroke();
+        lashes(ctx, x, y, side);
+      } else if (mode === "happy") {
+        ctx.beginPath();
+        ctx.arc(x, y + 5, 9, Math.PI * 1.12, Math.PI * 1.88);
+        line(ctx, 3.5); ctx.stroke();
+        lashes(ctx, x, y + 2, side);
+      } else {
+        ctx.beginPath(); ctx.ellipse(x + dx, y + dy, 7.5, 9, 0, 0, Math.PI * 2);
+        ctx.fillStyle = C.eye; ctx.fill();
+        ctx.beginPath(); ctx.arc(x + dx - 2.5, y + dy - 3.5, 3, 0, Math.PI * 2);
+        ctx.fillStyle = C.shine; ctx.fill();
+        ctx.beginPath(); ctx.arc(x + dx + 3, y + dy + 4, 1.7, 0, Math.PI * 2);
+        ctx.fill();
+        lashes(ctx, x, y, side);
+      }
+    }
+  }
+
+  function brows(ctx, mode) {
+    line(ctx, 4); ctx.strokeStyle = C.brow;
+    if (mode === "worried") {
+      ctx.beginPath(); ctx.moveTo(105, 113); ctx.lineTo(121, 106); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(165, 113); ctx.lineTo(149, 106); ctx.stroke();
+    } else if (mode === "focused") {
+      ctx.beginPath(); ctx.moveTo(105, 112); ctx.quadraticCurveTo(113, 113, 121, 116); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(165, 112); ctx.quadraticCurveTo(157, 113, 149, 116); ctx.stroke();
+    } else if (mode === "flat") {
+      ctx.beginPath(); ctx.moveTo(105, 114); ctx.lineTo(121, 113); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(149, 110); ctx.quadraticCurveTo(157, 105, 165, 109); ctx.stroke();
+    } else if (mode === "up") {
+      ctx.beginPath(); ctx.moveTo(105, 109); ctx.quadraticCurveTo(113, 103, 121, 107); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(149, 107); ctx.quadraticCurveTo(157, 103, 165, 109); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(106, 112); ctx.quadraticCurveTo(113, 108, 120, 111); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(150, 111); ctx.quadraticCurveTo(157, 108, 164, 112); ctx.stroke();
+    }
+  }
+
+  function snout(ctx) {
+    ellipse(ctx, 95, 158, 11, 6.5, C.blush, 0);
+    ellipse(ctx, 175, 158, 11, 6.5, C.blush, 0);
+    ellipse(ctx, 135, 158, 18, 12.5, C.snout);
+    ellipse(ctx, 128, 158, 3, 4.5, O, 0);
+    ellipse(ctx, 142, 158, 3, 4.5, O, 0);
+  }
+
+  function mouth(ctx, mode) {
+    line(ctx, 3);
+    if (mode === "wobble") {
+      ctx.beginPath(); ctx.moveTo(126, 182); ctx.lineTo(130, 178); ctx.lineTo(135, 182); ctx.lineTo(140, 178); ctx.lineTo(144, 182); ctx.stroke();
+    } else if (mode === "pout") {
+      ctx.beginPath(); ctx.moveTo(129, 182); ctx.quadraticCurveTo(135, 178, 141, 182); ctx.stroke();
+    } else if (mode === "tongue") {
+      ctx.beginPath(); ctx.moveTo(128, 178); ctx.quadraticCurveTo(135, 184, 142, 178); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(137, 181); ctx.quadraticCurveTo(141, 189, 145, 181);
+      fillStroke(ctx, C.tongue, 2.5);
+    } else if (mode === "big") {
+      ctx.beginPath();
+      ctx.moveTo(125, 177);
+      ctx.quadraticCurveTo(135, 194, 145, 177);
+      ctx.closePath();
+      fillStroke(ctx, C.mouth);
+      ctx.save(); ctx.clip();
+      ellipse(ctx, 135, 189, 7, 5, C.tongue, 0);
+      ctx.restore();
+    } else {
+      ctx.beginPath(); ctx.moveTo(126, 178); ctx.quadraticCurveTo(135, 187, 144, 178); ctx.stroke();
+    }
+  }
+
+  function calculator(ctx, digits, alert) {
+    ctx.save();
+    ctx.translate(172, 198);
+    ctx.rotate(-0.12);
+    // paper tape curling out the top
+    sleeve(ctx, [[-6, -36], [-8, -58], [-2, -74], [12, -78], [18, -68], [12, -62]], 14, C.tape);
+    line(ctx, 2); ctx.strokeStyle = C.ink;
+    ctx.beginPath(); ctx.moveTo(-11, -46); ctx.lineTo(-3, -46); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-11, -53); ctx.lineTo(-5, -53); ctx.stroke();
+    // body
+    rrect(ctx, -28, -36, 56, 72, 9);
+    fillStroke(ctx, C.calc);
+    // screen
+    rrect(ctx, -20, -28, 40, 16, 4);
+    fillStroke(ctx, alert ? "#F6C3BC" : C.calcScreen, 2.5);
+    ctx.fillStyle = alert ? "#B8322A" : O;
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.fillText(digits || "300", 15, -19.5);
+    // keys
+    for (var r = 0; r < 3; r++) {
+      for (var c = 0; c < 3; c++) {
+        rrect(ctx, -20 + c * 14, -4 + r * 12, 11, 9, 2.5);
+        fillStroke(ctx, r === 2 && c === 2 ? C.calcKeyHot : C.calcKey, 2);
+      }
+    }
+    ctx.restore();
+  }
+
+  function receipt(ctx) {
+    ctx.save();
+    ctx.translate(222, 98);
+    ctx.rotate(0.08);
+    ctx.beginPath();
+    ctx.moveTo(-14, 0); ctx.lineTo(14, 0); ctx.lineTo(14, 74);
+    for (var i = 0; i < 4; i++) { ctx.lineTo(10.5 - i * 7, 79); ctx.lineTo(7 - i * 7, 74); }
+    ctx.closePath();
+    fillStroke(ctx, C.tape);
+    line(ctx, 2); ctx.strokeStyle = C.ink;
+    var ys = [14, 22, 30];
+    for (var j = 0; j < ys.length; j++) {
+      ctx.beginPath(); ctx.moveTo(-8, ys[j]); ctx.lineTo(j === 1 ? 2 : 8, ys[j]); ctx.stroke();
+    }
+    check(ctx, 0, 52, 1.1);
+    ctx.restore();
+  }
+
+  function tapMarks(ctx, x, y) {
+    line(ctx, 2.5);
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 8, y - 3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 1, y + 8); ctx.lineTo(x + 10, y + 8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y + 16); ctx.lineTo(x + 8, y + 19); ctx.stroke();
+  }
+
+  // ---------- the poses ----------
+
+  var SCALE = 1.15; // grows Penny around her feet so she stands as tall as Quill
+  var DIGITS = ["128", "47", "300", "6.5", "1040", "1.75", "525", "300"];
+
+  // time: seconds since start (0 when reduced motion); st: seconds since the last setState
+  function draw(ctx, state, time, st, reduce) {
+    state = ALIAS[state] || state;
+    time = time || 0; st = st === undefined ? 10 : st;
+    ctx.save();
+    ctx.translate(135, 240); ctx.scale(SCALE, SCALE); ctx.translate(-135, -240);
+    drawPose(ctx, state, time, st, reduce);
+    ctx.restore();
+  }
+
+  function drawPose(ctx, state, time, st, reduce) {
+    var still = !!reduce;
+    // blink every ~3.8 s (never in reduced motion, never while happy-eyed)
+    var b = time % 3.8;
+    var blinking = !still && b < 0.16;
+    var bob = still ? 0 : Math.sin(time * 2) * 2;               // breathing
+    var hop = 0;
+    if (state === "done" && !still && st < 0.7) hop = -12 * Math.sin((st / 0.7) * Math.PI);
+
+    shadow(ctx);
+
+    // foot tap while waiting
+    var lift = 0;
+    if (state === "waiting") lift = still ? 7 : 7 * Math.abs(Math.sin(time * 5));
+
+    ctx.save();
+    ctx.translate(0, hop);
+    leg(ctx, 100, 0, 0);
+    leg(ctx, 146, lift, state === "waiting" ? -0.026 * lift : 0);
+    if (state === "waiting" && lift < 2.5) tapMarks(ctx, 186, 214);
+
+    ctx.translate(0, bob);
+    tail(ctx);
+    ears(ctx, state === "done");
+    body(ctx);
+    cardigan(ctx);
+    pearls(ctx);
+    hair(ctx);
+    snout(ctx);
+
+    if (state === "idle") {
+      eyes(ctx, blinking ? "blink" : "open"); brows(ctx); mouth(ctx);
+      var sway = still ? 0 : Math.sin(time * 2) * 2;
+      arm(ctx, [[78, 160], [60, 186], [64 - sway, 203]]);
+      arm(ctx, [[192, 160], [210, 186], [206 + sway, 203]]);
+    } else if (state === "waiting") {
+      // eyes drift between Market and Quill (both to her left)
+      var look = still ? -4 : -2.5 - 2 * Math.sin(time * 1.3);
+      eyes(ctx, blinking ? "blink" : "open", look, 0); brows(ctx, "flat"); mouth(ctx, "pout");
+      arm(ctx, [[80, 180], [118, 206], [162, 198]]);
+      arm(ctx, [[190, 180], [152, 208], [108, 198]]);
+    } else if (state === "working") {
+      var tap = still ? 0 : Math.max(0, Math.sin(time * 14)) * 5;
+      var digits = still ? "300" : DIGITS[Math.floor(time * 6) % DIGITS.length];
+      eyes(ctx, blinking ? "blink" : "open", 3, 3); brows(ctx, "focused"); mouth(ctx, "tongue");
+      arm(ctx, [[194, 168], [210, 202], [196, 226]]);
+      calculator(ctx, digits);
+      arm(ctx, [[80, 176], [116, 204], [156, 200 + tap]]);
+    } else if (state === "flagging") {
+      // something stops the plan: red "OVER" on the calculator, hoof on her cheek, worried
+      var shake = still ? 0 : Math.sin(time * 18) * 1.5;
+      eyes(ctx, blinking ? "blink" : "open", 0, -1); brows(ctx, "worried"); mouth(ctx, "wobble");
+      arm(ctx, [[194, 168], [210, 202], [196, 226]]);
+      ctx.save(); ctx.translate(shake, 0); calculator(ctx, "OVER", true); ctx.restore();
+      arm(ctx, [[80, 170], [72, 156], [90, 152]]);
+    } else if (state === "done") {
+      var wave = still ? 0 : Math.sin(time * 5) * 7;
+      eyes(ctx, "happy"); brows(ctx, "up"); mouth(ctx, "big");
+      arm(ctx, [[78, 156], [58 + wave * 0.4, 132], [52 + wave, 108]]);
+      receipt(ctx);
+      arm(ctx, [[192, 156], [212, 128], [220, 102]]);
+    }
+    ctx.restore();
+  }
+
+  // ---------- public API (matches createQuill / createWard) ----------
+
+  function createFinance(canvas, opts) {
+    opts = opts || {};
+    var root = typeof window !== "undefined" ? window : {};
+    var ctx = canvas.getContext("2d");
+    var state = STATES.indexOf(opts.state) >= 0 ? opts.state : "idle";
+    var now = function () { return typeof performance !== "undefined" ? performance.now() : Date.now(); };
+    var stateStart = now();
+    var raf = 0;
+    var reduce = !!(root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    var raff = root.requestAnimationFrame ? root.requestAnimationFrame.bind(root) : function (f) { return setTimeout(function () { f(now()); }, 16); };
+    var caf = root.cancelAnimationFrame ? root.cancelAnimationFrame.bind(root) : clearTimeout;
+
+    function resize() {
+      var dpr = root.devicePixelRatio || 1;
+      var r = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : { width: canvas.width, height: canvas.height };
+      var w = Math.max(1, Math.round(r.width * dpr));
+      var h = Math.max(1, Math.round(r.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    }
+
+    function frame(ts) {
+      resize();
+      var cw = canvas.width, ch = canvas.height;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+      var s = Math.min(cw / W, ch / H);
+      ctx.setTransform(s, 0, 0, s, (cw - W * s) / 2, (ch - H * s) / 2);
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      var t = ts === undefined ? now() : ts;
+      var time = reduce ? 0 : t / 1000;
+      var st = reduce ? 10 : (t - stateStart) / 1000;
+      draw(ctx, state, time, st, reduce);
+      if (!reduce) raf = raff(frame);
+    }
+
+    function start() {
+      caf(raf);
+      raf = raff(frame);
+    }
+
+    var api = {
+      setState: function (next) {
+        if (STATES.indexOf(next) < 0) throw new Error("Unknown Penny state: " + next + ". Use one of: " + STATES.join(", "));
+        if (next !== state) { state = next; stateStart = now(); }
+        start();
+      },
+      getState: function () { return state; },
+      destroy: function () { caf(raf); }
+    };
+    if (reduce && root.addEventListener) root.addEventListener("resize", start);
+    start();
+    return api;
+  }
+
+  createFinance.STATES = STATES.slice(0, 5); // the five universal states
+  createFinance._draw = draw; // used by the preview sheet
+
+  if (typeof window !== "undefined") window.createFinance = createFinance;
+  if (typeof module !== "undefined" && module.exports) module.exports = { createFinance: createFinance };
+})();
+
+</script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var stage = $("stage"), fly = $("fly");
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ward = createWard($("c-ward"));
+  var quill = createQuill($("c-quill"));
+  var scout = createMarket($("c-market"));
+  var penny = createFinance($("c-finance"));
+
+  var token = 0, paused = false, running = false, stepOnce = false, speed = 1, idx = 0;
+  var anims = new Set();
+
+  /* ---------- helpers ---------- */
+  function wait(ms, my) {
+    return new Promise(function (res) {
+      var elapsed = 0, last = null;
+      function f(ts) {
+        if (my !== token) return res(false);
+        if (last !== null && !paused) elapsed += (ts - last) * speed;
+        last = ts;
+        if (elapsed >= ms) return res(true);
+        requestAnimationFrame(f);
+      }
+      requestAnimationFrame(f);
+    });
+  }
+  function center(id) {
+    var r = $(id).getBoundingClientRect(), s = stage.getBoundingClientRect();
+    var el = $(id), c = el.querySelector("canvas, .ph");
+    if (c) { var rc = c.getBoundingClientRect(); return [rc.left - s.left + rc.width / 2, rc.top - s.top + rc.height * 0.55]; }
+    return [r.left - s.left + r.width / 2, r.top - s.top + r.height / 2];
+  }
+  function flash(id) { var el = $(id); el.classList.add("flash"); setTimeout(function () { el.classList.remove("flash"); }, 500); }
+  function send(from, to, o, my) {
+    var el = document.createElement("div");
+    el.className = "folder" + (o.kind ? " " + o.kind : "") + (o.est ? " est" : "");
+    var l = document.createElement("span"); l.className = "lbl"; l.textContent = o.label;
+    var t = document.createElement("span"); t.className = "tab"; t.textContent = o.tab;
+    el.append(l, t); fly.append(el);
+    var a = center(from), b = center(to), w = el.offsetWidth, h = el.offsetHeight;
+    var mx = (a[0] + b[0]) / 2, my2 = Math.min(a[1], b[1]) - 30;
+    function T(x, y, sc) { return "translate(" + (x - w / 2) + "px," + (y - h / 2) + "px) scale(" + sc + ")" + (o.kind === "note" ? " rotate(-2deg)" : ""); }
+    var anim = el.animate([
+      { transform: T(a[0], a[1], .5), opacity: 0 },
+      { transform: T(a[0], a[1], 1), opacity: 1, offset: .14 },
+      { transform: T(mx, my2, 1), opacity: 1, offset: .55 },
+      { transform: T(b[0], b[1], .95), opacity: 1, offset: .88 },
+      { transform: T(b[0], b[1], .5), opacity: 0 }
+    ], { duration: reduce ? 400 : 1900, easing: "ease-in-out", fill: "forwards" });
+    anim.playbackRate = speed;
+    if (paused) anim.pause();
+    anims.add(anim);
+    return anim.finished.then(function () {
+      anims.delete(anim); el.remove();
+      if (my === token) flash(to);
+      return my === token;
+    }, function () { anims.delete(anim); el.remove(); return false; });
+  }
+  function status(id, text, cls) { var el = $("st-" + id); el.textContent = text; el.className = "status" + (cls ? " " + cls : ""); }
+  function ph(id, cls) { var el = $("ph-" + id); el.classList.remove("busy", "waiting"); if (cls) el.classList.add(cls); }
+  function chips(id, list) {
+    var box = $("t-" + id); box.replaceChildren();
+    list.forEach(function (c) { var s = document.createElement("span"); s.className = "chip" + (c[1] ? " e" : ""); s.textContent = c[0]; if (c[2]) s.id = c[2]; box.append(s); });
+  }
+  function check(k, s, d) {
+    var li = document.querySelector('#checks li[data-k="' + k + '"]');
+    li.dataset.s = s;
+    if (d !== undefined) {
+      var dd = li.querySelector(".d"); dd.replaceChildren();
+      if (typeof d === "string") dd.textContent = d; else dd.append(d);
+    }
+  }
+  function conflictNode() {
+    var w = document.createElement("span"); w.className = "conflict";
+    var a = document.createElement("span"); a.className = "chip e"; a.textContent = "Break-even 300/mo";
+    var line = document.createElement("span"); line.className = "wire";
+    var b = document.createElement("span"); b.className = "chip"; b.textContent = "10 hrs/wk ≈ 200";
+    w.append(a, line, b); return w;
+  }
+
+  /* ---------- the run ---------- */
+  var STEPS = [
+    { who: "Founder → Ward", title: "Founder profile in",
+      body: "Homemade cookies from her kitchen in Milledgeville, GA. $1,500 to start, 10 hours a week, wants to open within 3 months. She's baked for 5 years but never run a business.",
+      run: async function (my) {
+        status("ward", "reading the profile", "busy");
+        await send("n-founder", "n-ward", { label: "Founder profile", tab: "Cookies · $1,500 · 10 hrs/wk" }, my);
+        ward.setState("reviewing");
+      } },
+    { who: "Ward → Customer & Market, Quill", title: "Sending the work out",
+      body: "Customer & Market and Legal & Compliance get the profile at the same time. Finance has to wait, because it needs the price from Market and the setup costs from Legal.",
+      run: async function (my) {
+        ward.setState("delegating"); status("ward", "sending work out", "busy");
+        status("finance", "waiting on 2 handoffs"); penny.setState("waiting");
+        await Promise.all([
+          send("n-ward", "n-market", { label: "Profile", tab: "Who buys, and at what price?" }, my),
+          send("n-ward", "n-legal", { label: "Profile", tab: "What does she need to be legal?" }, my)
+        ]);
+        if (my !== token) return;
+        scout.setState("working"); status("market", "researching customers", "busy");
+        quill.setState("researching"); status("legal", "researching · 0 / 6 searches", "busy");
+        ward.setState("idle"); status("ward", "waiting on Market and Legal");
+      } },
+    { who: "Customer & Market, Quill", title: "Two specialists working in parallel",
+      body: "Quill checks Georgia's cottage food rules, the Milledgeville business license and LLC fees. He uses 3 of his 6 allowed searches.",
+      run: async function (my) {
+        for (var i = 1; i <= 3; i++) {
+          if (!(await wait(800, my))) return;
+          status("legal", "researching · " + i + " / 6 searches", "busy");
+        }
+        await wait(500, my);
+      } },
+    { who: "Quill → Ward", title: "Legal handoff returned",
+      body: "Cookies are allowed under Georgia's Cottage Food License. About $190 to set up and $175 a year, both estimates. No blockers.",
+      run: async function (my) {
+        quill.setState("approved"); status("legal", "done · no blockers", "good");
+        if (!(await send("n-legal", "n-ward", { label: "Legal", tab: "$190 setup · $175/yr", est: true }, my))) return;
+        chips("legal", [["$190 setup", 1], ["$175/yr", 1], ["0 blockers"]]);
+        $("w-legal").classList.add("done"); status("finance", "waiting on Market");
+      } },
+    { who: "Ward → Customer & Market", title: "Passing along Legal's note",
+      body: "Legal flagged something Market needs to know: under a cottage food license, sales have to go direct to customers. No coffee shops or stores.",
+      run: async function (my) {
+        ward.setState("delegating");
+        if (!(await send("n-ward", "n-market", { label: "Note from Legal", tab: "Direct sales only. No coffee shops.", kind: "note" }, my))) return;
+        scout.setState("reading-note"); status("market", "reading Quill's note", "busy");
+        ward.setState("idle");
+        if (!(await wait(1400, my))) return;
+        scout.setState("working"); status("market", "researching customers", "busy");
+      } },
+    { who: "Customer & Market → Ward", title: "Market handoff returned",
+      body: "Start at $3.50 a cookie. About 120 customers a month, buying 3 each, at markets, events and in-state online orders. All estimates.",
+      run: async function (my) {
+        scout.setState("done"); status("market", "done", "good");
+        if (!(await send("n-market", "n-ward", { label: "Market", tab: "$3.50/cookie · 120 × 3/mo", est: true }, my))) return;
+        chips("market", [["$3.50/cookie", 1], ["120 customers/mo", 1], ["3 each/mo", 1]]);
+        $("w-market").classList.add("done");
+      } },
+    { who: "Ward → Finance", title: "Finance gets everything",
+      body: "Ward sends the profile plus both handoffs, so Finance can use Market's price and Legal's costs instead of guessing.",
+      run: async function (my) {
+        ward.setState("delegating"); status("ward", "sending to Finance", "busy");
+        if (!(await send("n-ward", "n-finance", { label: "Profile + 2 handoffs", tab: "Price $3.50 · legal $190" }, my))) return;
+        penny.setState("working"); status("finance", "running the numbers", "busy");
+        ward.setState("idle"); status("ward", "waiting on Finance");
+      } },
+    { who: "Finance", title: "Running the numbers",
+      body: "Ingredients, bag and label come to about $1.75 per cookie. Market booth fees, insurance and a simple website add about $525 a month.",
+      run: async function (my) { await wait(1800, my); } },
+    { who: "Finance → Ward", title: "Finance handoff returned",
+      body: "Startup cost is $1,040, inside the $1,500 budget. Break-even is 300 cookies a month. If she sells about 200, the leftover money lasts about 2.5 months.",
+      run: async function (my) {
+        penny.setState("done"); status("finance", "done", "good");
+        if (!(await send("n-finance", "n-ward", { label: "Finance", tab: "$1,040 start · break-even 300/mo", est: true }, my))) return;
+        chips("finance", [["$1,040 startup", 1], ["$1.75/cookie", 1], ["break-even 300/mo"], ["runway ~2.5 mo", 1]]);
+        ward.setState("reviewing"); status("ward", "checking the handoffs", "busy");
+      } },
+    { who: "Ward", title: "Checking the handoffs against each other",
+      body: "Budget passes ($1,040 is under $1,500). Price passes ($3.50 against $1.75 cost). Legal has no blockers.",
+      run: async function (my) {
+        if (!(await wait(500, my))) return; check("budget", "pass", "$1,040 of $1,500");
+        if (!(await wait(700, my))) return; check("price", "pass", "$3.50 vs. $1.75 cost");
+        if (!(await wait(700, my))) return; check("legal", "pass", "No high risks from Quill");
+        await wait(400, my);
+      } },
+    { who: "Ward", title: "Conflict caught",
+      body: "Break-even needs 300 cookies a month, but 10 hours a week lets her bake about 200. The market could buy 360, so the limit is her time, not demand. Runway is under 6 months too.",
+      run: async function (my) {
+        ward.setState("alert"); status("ward", "conflict found", "busy");
+        check("capacity", "fail", conflictNode());
+        if (!(await wait(900, my))) return;
+        check("runway", "warn", "About 2.5 months, under 6");
+        await wait(600, my);
+      } },
+    { who: "Ward → Finance", title: "Follow-up 1 of 1",
+      body: "“Re-run break-even at $5 a cookie.” Ward sends only one follow-up, so the founder isn't kept waiting.",
+      run: async function (my) {
+        ward.setState("delegating"); $("fu").textContent = "Follow-ups used: 1 of 1";
+        if (!(await send("n-ward", "n-finance", { label: "Follow-up 1 of 1", tab: "Re-run break-even at $5" }, my))) return;
+        penny.setState("working"); status("finance", "re-running at $5", "busy");
+        ward.setState("idle"); status("ward", "waiting on Finance");
+        await wait(1200, my);
+      } },
+    { who: "Finance → Ward", title: "Follow-up returned",
+      body: "At $5 a cookie, break-even drops to 162 cookies a month, within the 200 she can bake. At 200 sales she covers her costs, so her savings stop running down.",
+      run: async function (my) {
+        penny.setState("done"); status("finance", "done", "good");
+        if (!(await send("n-finance", "n-ward", { label: "Finance, revised", tab: "Break-even 162/mo at $5", est: true }, my))) return;
+        chips("finance", [["$1,040 startup", 1], ["$1.75/cookie", 1], ["break-even 162/mo at $5"]]);
+        ward.setState("reviewing");
+        check("capacity", "pass", "162 needed vs. ~200 possible, at $5");
+        if (!(await wait(600, my))) return;
+        check("runway", "pass", "Covers costs at $5 and 200 a month");
+      } },
+    { who: "Ward", title: "Writing the launch roadmap",
+      body: "Seven sections on one page, in the founder's own numbers. Estimates stay marked as estimates.",
+      run: async function (my) {
+        status("ward", "writing the roadmap", "busy");
+        var items = document.querySelectorAll("#roadmap li");
+        for (var i = 0; i < items.length; i++) {
+          if (!(await wait(520, my))) return;
+          items[i].classList.add("on");
+        }
+      } },
+    { who: "Ward → Founder", title: "Roadmap delivered: launch with changes",
+      body: "Price at $5 a cookie, keep sales direct to customers, and plan for about 200 cookies a month. Confirm the legal and tax steps with the Milledgeville SBDC or a professional.",
+      run: async function (my) {
+        ward.setState("approving"); status("ward", "roadmap delivered", "good");
+        await send("n-ward", "n-founder", { label: "Launch roadmap", tab: "Launch with changes", kind: "final" }, my);
+      } }
+  ];
+
+  /* ---------- player ---------- */
+  function caption(s) { $("cap-who").textContent = s.who; $("cap-title").textContent = s.title; $("cap-body").textContent = s.body; }
+  function meter() { $("bar").style.width = (idx / STEPS.length * 100) + "%"; }
+  function buttons() {
+    var done = idx >= STEPS.length;
+    $("play").textContent = done ? "Replay" : (running && !paused) ? "Pause" : "Play";
+    $("step").disabled = done || (running && !paused);
+  }
+  async function loop() {
+    if (running) return;
+    running = true; buttons();
+    var my = token;
+    while (idx < STEPS.length && my === token) {
+      caption(STEPS[idx]);
+      await STEPS[idx].run(my);
+      if (my !== token) return;
+      idx++; meter();
+      if (stepOnce) { stepOnce = false; paused = true; break; }
+      if (!(await wait(900, my))) return;
+    }
+    running = false; buttons();
+  }
+  function setPaused(p) {
+    paused = p;
+    anims.forEach(function (a) { p ? a.pause() : a.play(); });
+    buttons();
+  }
+  function reset() {
+    token++; running = false; stepOnce = false; idx = 0; paused = false;
+    anims.forEach(function (a) { a.cancel(); }); anims.clear(); fly.replaceChildren();
+    ward.setState("idle"); quill.setState("idle");
+    status("ward", "waiting for a founder"); status("market", "idle"); status("legal", "idle"); status("finance", "idle");
+    scout.setState("idle"); penny.setState("idle");
+    ["w-market", "w-legal"].forEach(function (id) { $(id).classList.remove("done"); });
+    ["market", "legal", "finance"].forEach(function (id) { $("t-" + id).replaceChildren(); });
+    var D = { budget: "Startup cost vs. $1,500", price: "Price comfortably above cost", legal: "Anything in Legal's risks that stops the plan", capacity: "Break-even vs. her hours and the market", runway: "Money lasts 6+ months" };
+    Object.keys(D).forEach(function (k) { check(k, "pending", D[k]); });
+    $("fu").textContent = "Follow-ups used: 0 of 1";
+    document.querySelectorAll("#roadmap li").forEach(function (li) { li.classList.remove("on"); });
+    $("cap-who").textContent = "Ready";
+    $("cap-title").textContent = "A first-time founder wants to sell cookies";
+    $("cap-body").textContent = "The run starts when her profile reaches Ward.";
+    meter(); buttons();
+  }
+
+  $("play").addEventListener("click", function () {
+    if (idx >= STEPS.length) { reset(); loop(); return; }
+    if (running && !paused) { setPaused(true); return; }
+    stepOnce = false; setPaused(false);
+    if (!running) loop();
+  });
+  $("step").addEventListener("click", function () {
+    if (idx >= STEPS.length) return;
+    stepOnce = true; setPaused(false);
+    if (!running) loop();
+  });
+  $("reset").addEventListener("click", function () { reset(); loop(); });
+  $("speed").addEventListener("change", function (e) {
+    speed = parseFloat(e.target.value) || 1;
+    anims.forEach(function (a) { a.playbackRate = speed; });
+  });
+
+  reset();
+  setTimeout(function () { if (idx === 0 && !running) loop(); }, 900);
+})();
+</script>

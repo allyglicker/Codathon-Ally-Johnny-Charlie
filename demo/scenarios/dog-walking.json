@@ -1,0 +1,243 @@
+{
+  "scenario": "dog-walking",
+  "keywords": [
+    "dog",
+    "pet",
+    "walk",
+    "walking",
+    "puppy",
+    "sitting"
+  ],
+  "founder_profile": {
+    "idea": "Dog walking service in my neighborhood",
+    "location": "Milledgeville, GA",
+    "startup_budget": 1000,
+    "hours_per_week": 15,
+    "timeline": "Open within 1 month",
+    "experience": "Grew up with dogs, no business experience"
+  },
+  "market": {
+    "agent": "customer_market",
+    "summary": "Busy working owners and older residents are the most likely customers. A 30-minute walk at $20 is a fair starting price for a local, reliable walker.",
+    "key_findings": [
+      "Best customers: busy working pet owners and older residents",
+      "Regular weekday walks are steadier income than one-off visits",
+      "Trust is the main selling point: reviews and a clean background check help",
+      "Neighborhood apps and vet office bulletin boards reach owners cheaply"
+    ],
+    "numbers": {
+      "price_per_unit": {
+        "value": 20,
+        "unit": "USD per 30-min walk",
+        "basis": "estimate"
+      },
+      "est_monthly_customers": {
+        "value": 15,
+        "unit": "customers/month",
+        "basis": "estimate"
+      },
+      "units_per_customer_per_month": {
+        "value": 12,
+        "unit": "walks/customer/month",
+        "basis": "estimate"
+      },
+      "price_range_low": {
+        "value": 15,
+        "unit": "USD",
+        "basis": "estimate"
+      },
+      "price_range_high": {
+        "value": 25,
+        "unit": "USD",
+        "basis": "estimate"
+      },
+      "est_marketing_cost_startup": {
+        "value": 30,
+        "unit": "USD",
+        "basis": "estimate"
+      },
+      "est_marketing_cost_monthly": {
+        "value": 0,
+        "unit": "USD/month",
+        "basis": "estimate"
+      }
+    },
+    "assumptions": [
+      "Assumes about 3 walks a week per regular customer"
+    ],
+    "risks": [
+      {
+        "risk": "Big app-based walking services compete on convenience",
+        "severity": "medium"
+      }
+    ],
+    "needs_from_others": [],
+    "next_steps": [
+      "Offer a free first walk to 5 neighbors",
+      "Ask your first customers for written reviews"
+    ],
+    "unit_definition": "one 30-minute walk",
+    "signal": "clear",
+    "tab": "$20/walk \u00b7 15 customers/mo",
+    "responses_to_others": []
+  },
+  "legal": {
+    "agent": "legal",
+    "summary": "Dog walking has few licensing steps, but liability insurance matters because you are responsible for someone else's pet.",
+    "key_findings": [
+      "Sole proprietor is the simplest way to start",
+      "Get a free EIN (tax ID) from the IRS",
+      "Check whether your city requires a general business license",
+      "Use a simple written agreement with each client"
+    ],
+    "numbers": {
+      "legal_setup_cost": {
+        "value": 100,
+        "unit": "USD",
+        "basis": "estimate"
+      },
+      "annual_license_fees": {
+        "value": 50,
+        "unit": "USD/year",
+        "basis": "estimate"
+      }
+    },
+    "assumptions": [
+      "Fees are estimates; confirm with your city and county"
+    ],
+    "risks": [
+      {
+        "risk": "Without insurance, an injury or lost dog could cost far more than the business earns",
+        "severity": "high"
+      }
+    ],
+    "needs_from_others": [
+      {
+        "agent": "finance",
+        "request": "Include pet-care liability insurance in monthly costs"
+      }
+    ],
+    "next_steps": [
+      "Get quotes for pet-care liability insurance",
+      "Write a one-page client agreement"
+    ],
+    "signal": "clear",
+    "tab": "$100 setup \u00b7 $50/yr"
+  },
+  "finance_raw": {
+    "agent": "finance",
+    "summary": "Dog walking is cheap to start. Your main ongoing cost is insurance.",
+    "startup_cost_items": [
+      {
+        "item": "Leashes, bags and treats",
+        "cost": 80
+      },
+      {
+        "item": "Background check",
+        "cost": 30
+      },
+      {
+        "item": "Logo and simple website",
+        "cost": 150
+      }
+    ],
+    "unit_cost_items": [
+      {
+        "item": "Treats and bags per walk",
+        "cost": 0.4
+      },
+      {
+        "item": "Card fees (about 3%)",
+        "cost": 0.6
+      }
+    ],
+    "monthly_fixed_cost_items": [
+      {
+        "item": "Pet-care liability insurance",
+        "cost": 45
+      },
+      {
+        "item": "Phone and scheduling app",
+        "cost": 15
+      },
+      {
+        "item": "Website hosting",
+        "cost": 20
+      }
+    ],
+    "key_findings": [
+      "Very low startup costs",
+      "Insurance is the biggest monthly bill",
+      "Almost all of each walk's price is yours to keep"
+    ],
+    "assumptions": [
+      "Insurance price is a typical estimate; get real quotes"
+    ],
+    "risks": [],
+    "needs_from_others": [],
+    "next_steps": [
+      "Get two insurance quotes",
+      "Set up a free scheduling and payment app"
+    ],
+    "responses_to_others": [
+      {
+        "agent": "legal",
+        "request": "Include pet-care liability insurance in monthly costs",
+        "answer": "Included: about $45 a month for pet-care liability insurance."
+      }
+    ],
+    "signal": "clear"
+  },
+  "manager": {
+    "exchanges": [
+      {
+        "from": "Ward",
+        "to": "Scout",
+        "value": "180 walks in 15 hrs/week?",
+        "kind": "conflict"
+      },
+      {
+        "from": "Scout",
+        "to": "Ward",
+        "value": "Offer $30 group walks",
+        "kind": "answer"
+      },
+      {
+        "from": "Ward",
+        "to": "Penny",
+        "value": "Re-check at $30",
+        "kind": "request",
+        "recheck_price": 30
+      }
+    ],
+    "roadmap": {
+      "one_sentence": "Reliable, local dog walks for busy owners in Milledgeville.",
+      "verdict": "launch_with_heads_up",
+      "verdict_title": "Ready to launch, with one heads-up",
+      "verdict_text": "Low costs and steady demand make this a strong first business. Watch your hours before you take on too many clients.",
+      "watch_out": [
+        {
+          "title": "Watch your hours",
+          "text": "Scout expects about 180 walks a month. At 30 minutes each plus travel, that may be more than 15 hours a week.",
+          "how_found": "Ward compared Scout's demand with your hours, Scout suggested group walks, and Penny re-checked the numbers.",
+          "fix": {
+            "label": "Try $30 group walks",
+            "price": 30
+          }
+        },
+        {
+          "title": "Get insured before your first walk",
+          "text": "Quill flagged liability insurance as the most important step, since you are responsible for someone else's pet."
+        }
+      ],
+      "first_steps": [
+        "Get two pet-care insurance quotes",
+        "Write a one-page client agreement",
+        "Offer a free first walk to 5 neighbors",
+        "Set up a scheduling and payment app",
+        "Ask your first clients for reviews"
+      ],
+      "go_verdict": "This is one of the easiest businesses to start. Get insured, start with a few neighbors, and use group walks so your hours go further."
+    }
+  }
+}
