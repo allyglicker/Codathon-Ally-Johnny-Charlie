@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neur — what's your dream?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow" id="eyebrow">Neur · launch planner</p>
+      <h1>What's your dream?</h1>
+      <p class="sub">Answer five quick questions. Your team of agents takes it from there.</p>
+    </div>
+  </header>
+
+  <div class="intake-grid">
+    <!-- the one question card -->
+    <section class="qcard" aria-live="polite">
+      <div class="qtop">
+        <span class="qcount" id="qcount">Question 1 of 5</span>
+        <div class="progress" style="width:100%"><i id="bar"></i></div>
+        <h2 class="ask" id="ask">Your idea</h2>
+        <p class="helper" id="helper"></p>
+      </div>
+      <div id="qbody"><!-- question body injected here --></div>
+      <div class="qnav">
+        <button class="ghost" id="back" type="button">Back</button>
+        <button class="primary" id="next" type="button">Continue</button>
+      </div>
+    </section>
+
+    <!-- "What you'll get" -->
+    <aside class="getpanel" aria-label="What you'll get">
+      <h2>Your team</h2>
+      <div class="crew-mini">
+        <div class="mini"><canvas id="g-market" role="img" aria-label="Scout"></canvas><p class="mname">Scout</p><p class="mrole">Customer &amp; Market</p></div>
+        <div class="mini"><canvas id="g-quill" role="img" aria-label="Quill"></canvas><p class="mname">Quill</p><p class="mrole">Legal &amp; Compliance</p></div>
+        <div class="mini"><canvas id="g-finance" role="img" aria-label="Penny"></canvas><p class="mname">Penny</p><p class="mrole">Finance</p></div>
+        <div class="mini"><canvas id="g-ward" role="img" aria-label="Ward"></canvas><p class="mname">Ward</p><p class="mrole">Manager</p></div>
+      </div>
+      <ul class="getlist">
+        <li><b>Scout</b><span>Who will buy, and at what price</span></li>
+        <li><b>Quill</b><span>What it takes to be legal</span></li>
+        <li><b>Penny</b><span>What it costs and when it pays off</span></li>
+        <li><b>Ward</b><span>Checks it all and writes your plan</span></li>
+      </ul>
+    </aside>
+  </div>
+
+  <p class="foot">General guidance, not legal or financial advice. Confirm legal and tax steps with your local Small Business Development Center (SBDC).</p>
+</div>
+
+<script src="characters/ward.js"></script>
+<script src="characters/quill.js"></script>
+<script src="characters/market.js"></script>
+<script src="characters/finance.js"></script>
+<script src="dream.js"></script>
+</body>
+</html>
