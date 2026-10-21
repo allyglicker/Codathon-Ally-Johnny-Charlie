@@ -35,6 +35,12 @@ python api/server.py                      # serves on http://localhost:8000
 curl -X POST http://localhost:8000/plan \
   -H 'Content-Type: application/json' \
   -d '{"idea":"Homemade cookies","location":"Milledgeville, GA","startup_budget":1500}'
+
+# 5. The live app (intake -> team at work -> roadmap)
+#    Terminal 1: the API above, on :8000
+#    Terminal 2: serve the app folder, then open it in a browser
+python -m http.server 8080 --directory app
+open http://localhost:8080/            # add ?demo=1 to force demo mode
 ```
 
 ## The API
@@ -79,8 +85,31 @@ neur/
 │   ├── server.py                 POST /plan, GET /health (standard library)
 │   └── agents.py                 live agents on Amazon Bedrock (Claude)
 └── app/
+    ├── index.html                The live app: intake, team at work, roadmap
+    ├── app.js                    Intake flow, plays result.events, roadmap + price slider
     ├── launch-desk.html          The scripted demo screen, with all four characters
     └── characters/               ward.js, quill.js, market.js, finance.js, crew-preview.html
 ```
+
+## The live app
+
+`app/index.html` + `app/app.js` are the three screens the founder sees:
+
+1. **What's your dream?** Five quick questions, one per screen, with example chips,
+   a budget slider and tap-to-answer options.
+2. **Your team is on it.** The Launch Desk layout. The app POSTs the profile to
+   `/plan`, then plays `result["events"]` in order. One function drives every
+   character: it reads each event's `state` and calls `setState` on the right
+   one (no per-agent branches). Folders fly between agents, Ward's trays fill,
+   and a live log shows what the agents tell each other.
+3. **Your launch plan.** Verdict banner, three big numbers (cost to open, sales
+   to break even, how long the money lasts), a price slider that recalculates
+   break-even instantly with the calculator's formula, "Watch out for" cards, a
+   first-5-steps checklist, "Will it sell?" and "Getting legal".
+
+A quiet **Sample data** tag shows whenever `used_saved_answers` is true, and
+`result["warnings"]` are logged to the console. Force demo mode with `?demo=1`
+in the URL or by pressing **d** on the team screen. Point the app at a different
+API with `?api=https://...`.
 
 Neur gives general guidance, not legal, tax or financial advice. Every roadmap points the founder to their local Small Business Development Center (SBDC) to confirm.
