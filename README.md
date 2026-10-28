@@ -4,6 +4,8 @@ Neur helps anyone who dreams of starting a business turn an idea into a first la
 
 Built for the AWS code-a-thon by Ally Glicker, Johnny and Charlie.
 
+**Live demo:** https://main.d2jortcwl57u5p.amplifyapp.com (hosted on AWS Amplify, runs the whole agent team in the browser).
+
 ## The team of agents
 
 | Character | Role | What it does |
@@ -37,11 +39,38 @@ curl -X POST http://localhost:8000/plan \
   -d '{"idea":"Homemade cookies","location":"Milledgeville, GA","startup_budget":1500}'
 
 # 5. The live app (intake -> team at work -> roadmap)
-#    Terminal 1: the API above, on :8000
-#    Terminal 2: serve the app folder, then open it in a browser
+#    The app is fully static: by default it runs the agent team in the
+#    browser (demo mode), so no backend is needed.
 python -m http.server 8080 --directory app
-open http://localhost:8080/            # add ?demo=1 to force demo mode
+open http://localhost:8080/            # self-contained, no API required
+
+#    To use the real Python backend instead, run the API (step 4) and point
+#    the app at it:
+open "http://localhost:8080/?api=http://localhost:8000"
 ```
+
+## Deploying (AWS Amplify Hosting)
+
+The `app/` folder is a static site, so it deploys to Amplify Hosting with no
+build step. The public build runs the whole team in the browser via
+`app/pipeline.js` + `app/scenarios.js` (a faithful port of the demo-mode
+`run_pipeline()` and the finance calculator), so the hosted site needs no
+backend, no AWS credentials, and makes no paid model calls.
+
+Manual deploy (what the live demo uses):
+
+```bash
+APP_ID=$(aws amplify create-app --name neur --platform WEB \
+  --region us-east-2 --query app.appId --output text)
+aws amplify create-branch --app-id "$APP_ID" --branch-name main --region us-east-2
+( cd app && zip -r -q /tmp/neur_app.zip . )
+# create-deployment returns a jobId + zipUploadUrl; upload, then start:
+# curl --upload-file /tmp/neur_app.zip "<zipUploadUrl>"
+# aws amplify start-deployment --app-id "$APP_ID" --branch-name main --job-id <jobId> --region us-east-2
+```
+
+To wire continuous deploys from GitHub instead, connect the repo in the Amplify
+console (one-time OAuth) and set the branch's output directory to `app`.
 
 ## The API
 
@@ -87,11 +116,18 @@ neur/
 └── app/
     ├── index.html                The live app: intake, team at work, roadmap
     ├── app.js                    Intake flow, plays result.events, roadmap + price slider
+    ├── pipeline.js               In-browser demo pipeline (port of run_pipeline, demo mode)
+    ├── scenarios.js              Saved scenarios embedded for the static build
     ├── launch-desk.html          The scripted demo screen, with all four characters
     └── characters/               ward.js, quill.js, market.js, finance.js, crew-preview.html
 ```
 
 ## The live app
+
+By default the app is self-contained: with no `?api=` URL it runs the whole
+agent team in the browser (`app/pipeline.js` + `app/scenarios.js`) in demo
+mode, so the public build needs no backend. Point it at the Python API with
+`?api=https://...` to use the real agents instead.
 
 `app/index.html` + `app/app.js` are the three screens the founder sees:
 
