@@ -1,0 +1,22 @@
+# AWS Amplify Hosting build settings for Neur.
+#
+# Neur's front end (the app/ folder) is a plain static site: HTML, CSS and
+# vanilla JS with no bundler. The public build runs the whole agent team in
+# the browser (app/pipeline.js + app/scenarios.js), so there is nothing to
+# compile and no backend to deploy.
+#
+# So there is no build step. We just publish the app/ folder as-is.
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands: []
+    build:
+      commands: []
+  artifacts:
+    # Serve everything in app/ at the site root (index.html becomes /).
+    baseDirectory: app
+    files:
+      - '**/*'
+  cache:
+    paths: []
