@@ -11,10 +11,14 @@
 (function () {
   "use strict";
 
-  // Where the backend lives. Same origin by default; override with ?api=...
+  // Where the backend lives. By default the app runs the agent team in the
+  // browser (demo mode, no backend needed) so the public build is fully static.
+  // Point at a live backend with ?api=https://... to use real agents instead.
   var API = new URLSearchParams(location.search).get("api") || "";
   // ?demo=1 forces demo mode on stage (also a hidden "d" keypress, below).
   var FORCE_DEMO = new URLSearchParams(location.search).get("demo") === "1";
+  // Run in the browser whenever there's no backend URL, or demo is forced.
+  var USE_LOCAL = !API || FORCE_DEMO;
 
   var $ = function (id) { return document.getElementById(id); };
   var money = function (v) { return "$" + Math.round(v).toLocaleString(); };
@@ -177,6 +181,20 @@
     showScreen("team");
     fillFounder(profile);
     initCharacters();
+
+    // No backend configured: run the whole agent team in the browser.
+    if (USE_LOCAL) {
+      if (typeof window.runPipelineLocal !== "function") {
+        showError("The in-browser demo pipeline didn't load.");
+        return;
+      }
+      // A short tick so the team screen paints before the run starts.
+      setTimeout(function () {
+        try { playRun(window.runPipelineLocal(profile)); }
+        catch (err) { showError((err && err.message) || String(err)); }
+      }, 50);
+      return;
+    }
 
     var url = API + "/plan" + (FORCE_DEMO ? "?demo=1" : "");
     var body = JSON.stringify({ founder_profile: profile });
@@ -627,7 +645,7 @@
     var cap = $("cap-who"); if (cap) cap.textContent = "Something went wrong";
     $("cap-title").textContent = "Couldn't reach the team";
     $("cap-body").innerHTML = '<div class="err">' + escapeHtml(msg) +
-      '<br><br>Is the backend running? Start it with <code>python api/server.py</code>, or open this page with <code>?demo=1</code>.</div>';
+      '<br><br>Try reloading the page. If you pointed the app at a backend with <code>?api=</code>, make sure it is running.</div>';
   }
 
   // Hidden stage switch: press "d" to force demo mode and restart the current idea.
